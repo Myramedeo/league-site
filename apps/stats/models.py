@@ -42,6 +42,11 @@ class PitchingStatLine(models.Model):
     class Meta:
         unique_together = ('player', 'game')
 
+    def clean(self):
+      from django.core.exceptions import ValidationError
+      if self.strikeouts and self.innings_pitched == 0:
+          raise ValidationError("Strikeouts recorded but no innings pitched.")
+
     @property
     def era(self):
         if not self.innings_pitched:

@@ -12,6 +12,11 @@ class Game(models.Model):
 
     class Meta:
         ordering = ['-date']
+    
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.home_team_id == self.away_team_id:
+            raise ValidationError("Home and away team must be different.")
 
 
 class GameResult(models.Model):
