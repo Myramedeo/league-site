@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>{{ player }}</h1>
+    <h2>Batting</h2>
+    <p>AVG: {{ batting_avg }} | AB: {{ batting_totals.at_bats }} | H: {{ batting_totals.hits }} | RBI: {{ batting_totals.rbis }}</p>
+    <h2>Pitching</h2>
+    <p>ERA: {{ era }} | IP: {{ pitching_totals.innings_pitched }} | ER: {{ pitching_totals.earned_runs }}</p>
+{% endblock %}

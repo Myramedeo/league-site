@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Schedule — {{ season }}</h1>
+    <ul>
+        {% for game in games %}
+        <li>
+            {{ game.date }}: {{ game.away_team }} @ {{ game.home_team }}
+            {% if game.result %}
+            — Final: {{ game.result.away_score }}-{{ game.result.home_score }}
+            {% else %}
+            — Upcoming
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+{% endblock %}

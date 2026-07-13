@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Standings — {{ season }}</h1>
+    <table>
+        <thead>
+        <tr><th>Team</th><th>W</th><th>L</th><th>T</th><th>Pct</th></tr>
+        </thead>
+        <tbody>
+        {% for s in standings %}
+            <tr>
+            <td>{{ s.team }}</td>
+            <td>{{ s.wins }}</td>
+            <td>{{ s.losses }}</td>
+            <td>{{ s.ties }}</td>
+            <td>{{ s.win_pct }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

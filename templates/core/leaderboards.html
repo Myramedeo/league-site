@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Stat Leaders — {{ season }}</h1>
+    <h2>Batting Average</h2>
+    <ol>
+        {% for leader in batting_leaders %}
+        <li>{{ leader.player__first_name }} {{ leader.player__last_name }} — {{ leader.batting_average }}</li>
+        {% endfor %}
+    </ol>
+    <h2>ERA</h2>
+    <ol>
+        {% for leader in era_leaders %}
+        <li>{{ leader.player__first_name }} {{ leader.player__last_name }} — {{ leader.era }}</li>
+        {% endfor %}
+    </ol>
+{% endblock %}
