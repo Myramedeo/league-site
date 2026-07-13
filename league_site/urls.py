@@ -16,7 +16,21 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
-from core import views as core_views
+from apps.core import views as core_views
+
+from rest_framework.routers import DefaultRouter
+from teams.views import TeamViewSet, SeasonViewSet
+from players.views import PlayerViewSet
+from games.views import GameViewSet
+from core.views import standings_api
+
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+
+router = DefaultRouter()
+router.register('teams', TeamViewSet)
+router.register('seasons', SeasonViewSet)
+router.register('players', PlayerViewSet)
+router.register('games', GameViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -26,4 +40,8 @@ urlpatterns = [
     path('stats/', core_views.leaderboards, name='leaderboards'),
     path('schedule/', core_views.schedule, name='schedule'),
     path('', core_views.standings, name='home'),  # simplest homepage: redirect to standings
+    path('api/', include(router.urls)),
+    path('api/standings/', standings_api, name='standings_api'),
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='docs'),
 ]

@@ -1,5 +1,16 @@
 from django.shortcuts import render, get_object_or_404
-from .models import Team
+from .models import Team, Season
+
+from rest_framework import viewsets
+from .serializers import TeamSerializer, SeasonSerializer
+
+class TeamViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Team.objects.all().order_by('name')
+    serializer_class = TeamSerializer
+
+class SeasonViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Season.objects.all().order_by('-year')
+    serializer_class = SeasonSerializer
 
 def team_list(request):
     teams = Team.objects.all().order_by('name')

@@ -4,6 +4,24 @@ from games.services import compute_standings
 from stats.services import batting_leaderboard, era_leaderboard
 from games.models import Game
 
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .serializers import TeamStandingSerializer
+
+@api_view(['GET'])
+def standings_api(request):
+    season_year = request.query_params.get('season')
+    season = (
+        Season.objects.get(year=season_year) if season_year
+        else Season.objects.order_by('-year').first()
+    )
+    if not season:
+        return Response([])
+
+    standings = compute_standings(season)
+    serializer = TeamStandingSerializer(standings, many=True)
+    return Response(serializer.data)
+
 def schedule(request):
     season = Season.objects.order_by('-year').first()
     games = (

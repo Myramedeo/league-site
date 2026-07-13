@@ -2,6 +2,7 @@ annotated-doc==0.0.4
 annotated-types==0.7.0
 anyio==4.13.0
 asgiref==3.11.1
+attrs==26.1.0
 babel==2.18.0
 beautifulsoup4==4.14.3
 certifi==2026.4.22
@@ -14,6 +15,7 @@ distro==1.9.0
 dj-database-url==3.1.2
 Django==6.0.7
 djangorestframework==3.17.1
+drf-spectacular==0.30.0
 faiss-cpu==1.13.2
 filelock==3.29.0
 fsspec==2026.4.0
@@ -24,9 +26,12 @@ httpcore==1.0.9
 httpx==0.28.1
 huggingface_hub==1.15.0
 idna==3.15
+inflection==0.5.1
 Jinja2==3.1.6
 jiter==0.15.0
 joblib==1.5.3
+jsonschema==4.26.0
+jsonschema-specifications==2025.9.1
 jusText==3.0.2
 lxml==6.1.0
 lxml_html_clean==0.4.4
@@ -46,9 +51,11 @@ python-dateutil==2.9.0.post0
 python-decouple==3.8
 pytz==2026.2
 PyYAML==6.0.3
+referencing==0.37.0
 regex==2026.5.9
 requests==2.34.2
 rich==15.0.0
+rpds-py==2026.6.3
 safetensors==0.7.0
 scikit-learn==1.8.0
 scipy==1.17.1
@@ -72,4 +79,5 @@ typing-inspection==0.4.2
 typing_extensions==4.15.0
 tzdata==2026.2
 tzlocal==5.3.1
+uritemplate==4.2.0
 urllib3==2.7.0

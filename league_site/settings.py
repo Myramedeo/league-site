@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'games',
     'stats',
     'core',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -141,4 +142,5 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '100/minute',
     },
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
