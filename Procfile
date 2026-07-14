@@ -1,0 +1,1 @@
+web: gunicorn league_site.wsgi --log-file -
