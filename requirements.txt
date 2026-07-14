@@ -19,6 +19,7 @@ drf-spectacular==0.30.0
 faiss-cpu==1.13.2
 filelock==3.29.0
 fsspec==2026.4.0
+gunicorn==26.0.0
 h11==0.16.0
 hf-xet==1.5.0
 htmldate==1.9.4
@@ -81,3 +82,4 @@ tzdata==2026.2
 tzlocal==5.3.1
 uritemplate==4.2.0
 urllib3==2.7.0
+whitenoise==6.12.0
