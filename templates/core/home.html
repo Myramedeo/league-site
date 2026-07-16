@@ -3,14 +3,80 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-<h1>Welcome to the League</h1>
-<p>Use the links above to browse teams, standings, stats, and the schedule.</p>
+
+<section class="rounded-2xl border border-[#33493B] bg-[#1B2A22] p-8 md:p-12">
+    <div class="flex flex-col items-start gap-8 md:flex-row md:items-center">
+        <div class="flex-1">
+            <p class="font-scoreboard text-xs uppercase tracking-[0.3em] text-[#E8B23D]">Live from the ballpark</p>
+            <h1 class="font-display mt-3 text-4xl font-bold uppercase leading-[0.95] tracking-tight text-[#F2F0E6] md:text-6xl">
+                Welcome to<br>the League
+            </h1>
+            <p class="mt-4 max-w-md text-[#C9CFC3]">
+                Rosters, box scores, and standings for every team in the league — updated after every game.
+            </p>
+            <div class="mt-6 flex flex-wrap gap-3">
+                <a href="{% url 'standings' %}"
+                   class="rounded-md bg-[#E8B23D] px-5 py-2.5 font-semibold text-[#16241B] transition-colors hover:bg-[#F2C463]">
+                    View standings
+                </a>
+                <a href="{% url 'schedule' %}"
+                   class="rounded-md border border-[#3F5847] px-5 py-2.5 font-semibold text-[#F2F0E6] transition-colors hover:border-[#E8B23D] hover:text-[#E8B23D]">
+                    See schedule
+                </a>
+            </div>
+        </div>
+
+        <div class="shrink-0 rounded-lg border-4 border-[#0F1D16] bg-black/40 px-8 py-6 shadow-inner">
+            <p class="font-scoreboard text-center text-[10px] uppercase tracking-[0.3em] text-[#7C8B7F]">Season</p>
+            <p class="font-scoreboard mt-1 text-center text-5xl font-bold text-[#E8B23D] [text-shadow:0_0_14px_rgba(232,178,61,0.55)]">
+                {% if season %}{{ season.year }}{% else %}&mdash;&mdash;&mdash;&mdash;{% endif %}
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+    <a href="{% url 'team_list' %}"
+       class="group rounded-xl border border-[#33493B] bg-[#1B2A22] p-5 transition-colors hover:border-[#E8B23D]">
+        <span class="text-2xl" aria-hidden="true">🧢</span>
+        <p class="font-display mt-2 uppercase tracking-wide text-[#F2F0E6] group-hover:text-[#E8B23D]">Teams</p>
+        <p class="mt-1 text-sm text-[#8FA090]">Rosters &amp; records</p>
+    </a>
+    <a href="{% url 'standings' %}"
+       class="group rounded-xl border border-[#33493B] bg-[#1B2A22] p-5 transition-colors hover:border-[#E8B23D]">
+        <span class="text-2xl" aria-hidden="true">🏆</span>
+        <p class="font-display mt-2 uppercase tracking-wide text-[#F2F0E6] group-hover:text-[#E8B23D]">Standings</p>
+        <p class="mt-1 text-sm text-[#8FA090]">League table</p>
+    </a>
+    <a href="{% url 'leaderboards' %}"
+       class="group rounded-xl border border-[#33493B] bg-[#1B2A22] p-5 transition-colors hover:border-[#E8B23D]">
+        <span class="text-2xl" aria-hidden="true">📊</span>
+        <p class="font-display mt-2 uppercase tracking-wide text-[#F2F0E6] group-hover:text-[#E8B23D]">Stats</p>
+        <p class="mt-1 text-sm text-[#8FA090]">Leaderboards</p>
+    </a>
+    <a href="{% url 'schedule' %}"
+       class="group rounded-xl border border-[#33493B] bg-[#1B2A22] p-5 transition-colors hover:border-[#E8B23D]">
+        <span class="text-2xl" aria-hidden="true">📅</span>
+        <p class="font-display mt-2 uppercase tracking-wide text-[#F2F0E6] group-hover:text-[#E8B23D]">Schedule</p>
+        <p class="mt-1 text-sm text-[#8FA090]">Games &amp; results</p>
+    </a>
+</section>
 
 {% if season %}
-    <h2>Current Season: {{ season.year }}</h2>
-    <p>Latest standings are available below.</p>
-    {% include 'core/standings_table.html' %}
+<section class="mt-10">
+    <div class="mb-3 flex items-center justify-between">
+        <h2 class="font-display text-2xl uppercase tracking-wide text-[#F2F0E6]">Current Season: {{ season.year }}</h2>
+        <a href="{% url 'standings' %}" class="font-scoreboard text-sm text-[#E8B23D] hover:underline">Full standings &rarr;</a>
+    </div>
+    <div class="rounded-2xl border-4 border-[#0F1D16] bg-[#F4EFE1] p-4 text-[#16241B] shadow-lg md:p-6">
+        {% include 'core/standings_table.html' %}
+    </div>
+</section>
 {% else %}
-    <p>No season data is available yet.</p>
+<section class="mt-10 rounded-2xl border border-dashed border-[#3F5847] bg-[#1B2A22] p-8 text-center">
+    <p class="font-display text-xl uppercase tracking-wide text-[#F2F0E6]">No season data yet</p>
+    <p class="mt-2 text-[#8FA090]">Standings and stats will show up here once a season is added.</p>
+</section>
 {% endif %}
+
 {% endblock %}
