@@ -16,6 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from django.conf import settings
 from apps.core import views as core_views
 
 from rest_framework.routers import DefaultRouter
@@ -39,9 +40,15 @@ urlpatterns = [
     path('standings/', core_views.standings, name='standings'),
     path('stats/', core_views.leaderboards, name='leaderboards'),
     path('schedule/', core_views.schedule, name='schedule'),
-    path('', core_views.standings, name='home'),  # simplest homepage: redirect to standings
+    path('', core_views.home, name='home'),
     path('api/', include(router.urls)),
     path('api/standings/', standings_api, name='standings_api'),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='docs'),
 ]
+
+if settings.DEBUG:
+    # Include django_browser_reload URLs only in DEBUG mode
+    urlpatterns += [
+        path("__reload__/", include("django_browser_reload.urls")),
+    ]

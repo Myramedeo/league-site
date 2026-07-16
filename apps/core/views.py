@@ -42,6 +42,14 @@ def leaderboards(request):
         'era_leaders': era_leaderboard(season, min_innings=3) if season else [],
     })
 
+def home(request):
+    season = Season.objects.order_by('-year').first()
+    standings_list = compute_standings(season) if season else []
+    return render(request, 'core/home.html', {
+        'season': season,
+        'standings': standings_list,
+    })
+
 @cache_page(60 * 15)  # 15 minutes
 def standings(request):
     season = Season.objects.order_by('-year').first()

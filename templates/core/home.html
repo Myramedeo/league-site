@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<h1>Welcome to the League</h1>
+<p>Use the links above to browse teams, standings, stats, and the schedule.</p>
+
+{% if season %}
+    <h2>Current Season: {{ season.year }}</h2>
+    <p>Latest standings are available below.</p>
+    {% include 'core/standings_table.html' %}
+{% else %}
+    <p>No season data is available yet.</p>
+{% endif %}
+{% endblock %}

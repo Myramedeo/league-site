@@ -57,7 +57,11 @@ INSTALLED_APPS = [
     'stats',
     'core',
     'drf_spectacular',
+    'tailwind',
+    'theme',
 ]
+
+TAILWIND_APP_NAME = 'theme'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -89,6 +93,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'league_site.wsgi.application'
 
+# Django Debug Toolbar
+
+if DEBUG:
+    # Add django_browser_reload only in DEBUG mode
+    INSTALLED_APPS += ["django_browser_reload"]
+    MIDDLEWARE += ["django_browser_reload.middleware.BrowserReloadMiddleware"]
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
@@ -162,3 +172,7 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     }
 }
+
+# Tailwind Configuration
+
+NPM_BIN_PATH = config('NPM_BIN_PATH', default='npm')
