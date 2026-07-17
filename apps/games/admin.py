@@ -8,7 +8,7 @@ class GameResultInline(admin.StackedInline):
 
 @admin.register(Game)
 class GameAdmin(admin.ModelAdmin):
-    list_display = ('date', 'away_team', 'home_team', 'season')
-    list_filter = ('season', 'home_team', 'away_team')
+    list_display = ('date', 'scheduled_time', 'status', 'venue', 'away_team', 'home_team', 'season')
+    list_filter = ('season', 'home_team', 'away_team', 'status')
     date_hierarchy = 'date'
     inlines = [GameResultInline, BattingStatLineInline, PitchingStatLineInline]

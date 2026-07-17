@@ -2,12 +2,29 @@ from django.db import models
 from teams.models import Team, Season
 
 class Game(models.Model):
+    STATUS_CHOICES = [
+        ('F', 'Final'),
+        ('TBP', 'To be played'),
+        ('W', 'Win'),
+        ('L', 'Loss'),
+        ('T', 'Tie'),
+        ('CAN', 'Canceled'),
+        ('PPD', 'Postponed'),
+        ('SPD', 'Suspended'),
+        ('FFT', 'Forfeit'),
+    ]
+
     season = models.ForeignKey(Season, on_delete=models.CASCADE, related_name='games')
     home_team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='home_games')
     away_team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='away_games')
     date = models.DateField()
+    scheduled_time = models.TimeField(blank=True, null=True)
+    status = models.CharField(max_length=3, choices=STATUS_CHOICES, default='TBP')
+    venue = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
+        if self.scheduled_time:
+            return f"{self.away_team} @ {self.home_team} ({self.date} {self.scheduled_time})"
         return f"{self.away_team} @ {self.home_team} ({self.date})"
 
     class Meta:
