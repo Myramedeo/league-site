@@ -1,0 +1,28 @@
+<div class="overflow-x-auto">
+    <table class="w-full border-collapse text-left">
+        <thead>
+            <tr class="border-b-2 border-[#16241B]/20">
+                <th class="font-display px-3 py-2 uppercase tracking-wide text-[#16241B]">Team</th>
+                <th class="font-scoreboard px-3 py-2 text-right text-sm uppercase tracking-wide text-[#16241B]">W</th>
+                <th class="font-scoreboard px-3 py-2 text-right text-sm uppercase tracking-wide text-[#16241B]">L</th>
+                <th class="font-scoreboard px-3 py-2 text-right text-sm uppercase tracking-wide text-[#16241B]">T</th>
+                <th class="font-scoreboard px-3 py-2 text-right text-sm uppercase tracking-wide text-[#16241B]">Pct</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in standings %}
+            <tr class="border-b border-[#16241B]/10 hover:bg-black/5">
+                <td class="px-3 py-2.5 font-medium">{{ s.team }}</td>
+                <td class="font-scoreboard px-3 py-2.5 text-right">{{ s.wins }}</td>
+                <td class="font-scoreboard px-3 py-2.5 text-right">{{ s.losses }}</td>
+                <td class="font-scoreboard px-3 py-2.5 text-right">{{ s.ties }}</td>
+                <td class="font-scoreboard px-3 py-2.5 text-right">{{ s.win_pct }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="px-3 py-6 text-center text-[#16241B]/60">No standings yet — check back once games have been played.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
