@@ -1,16 +1,48 @@
 {% extends "base.html" %}
+{% block title %}Stat Leaders{% endblock %}
 {% block content %}
-    <h1>Stat Leaders — {{ season }}</h1>
-    <h2>Batting Average</h2>
-    <ol>
-        {% for leader in batting_leaders %}
-        <li>{{ leader.player__first_name }} {{ leader.player__last_name }} — {{ leader.batting_average }}</li>
-        {% endfor %}
-    </ol>
-    <h2>ERA</h2>
-    <ol>
-        {% for leader in era_leaders %}
-        <li>{{ leader.player__first_name }} {{ leader.player__last_name }} — {{ leader.era }}</li>
-        {% endfor %}
-    </ol>
+
+<div class="mb-8">
+    <p class="font-scoreboard text-xs uppercase tracking-[0.3em] text-[#E8B23D]">{{ season }}</p>
+    <h1 class="font-display mt-2 text-4xl font-bold uppercase tracking-tight text-[#F2F0E6] md:text-5xl">Stat Leaders</h1>
+</div>
+
+<div class="grid gap-6 md:grid-cols-2">
+
+    <div class="rounded-2xl border-4 border-[#0F1D16] bg-[#F4EFE1] p-4 text-[#16241B] shadow-lg md:p-6">
+        <h2 class="font-display mb-4 border-b-2 border-[#16241B]/20 pb-2 text-lg uppercase tracking-wide">Batting Average</h2>
+        <ol class="divide-y divide-[#16241B]/10">
+            {% for leader in batting_leaders %}
+            <li class="flex items-center justify-between py-2.5">
+                <span class="flex items-center gap-3">
+                    <span class="font-scoreboard w-6 text-sm text-[#16241B]/50">{{ forloop.counter }}</span>
+                    <span class="font-medium">{{ leader.player__first_name }} {{ leader.player__last_name }}</span>
+                </span>
+                <span class="font-scoreboard font-semibold text-[#8A5A0F]">{{ leader.batting_average }}</span>
+            </li>
+            {% empty %}
+            <li class="py-6 text-center text-[#16241B]/60">No batting stats yet.</li>
+            {% endfor %}
+        </ol>
+    </div>
+
+    <div class="rounded-2xl border-4 border-[#0F1D16] bg-[#F4EFE1] p-4 text-[#16241B] shadow-lg md:p-6">
+        <h2 class="font-display mb-4 border-b-2 border-[#16241B]/20 pb-2 text-lg uppercase tracking-wide">ERA</h2>
+        <ol class="divide-y divide-[#16241B]/10">
+            {% for leader in era_leaders %}
+            <li class="flex items-center justify-between py-2.5">
+                <span class="flex items-center gap-3">
+                    <span class="font-scoreboard w-6 text-sm text-[#16241B]/50">{{ forloop.counter }}</span>
+                    <span class="font-medium">{{ leader.player__first_name }} {{ leader.player__last_name }}</span>
+                </span>
+                <span class="font-scoreboard font-semibold text-[#8A5A0F]">{{ leader.era }}</span>
+            </li>
+            {% empty %}
+            <li class="py-6 text-center text-[#16241B]/60">No pitching stats yet.</li>
+            {% endfor %}
+        </ol>
+    </div>
+
+</div>
+
 {% endblock %}

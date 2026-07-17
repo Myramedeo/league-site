@@ -1,8 +1,54 @@
 {% extends "base.html" %}
+{% block title %}{{ player }}{% endblock %}
 {% block content %}
-    <h1>{{ player }}</h1>
-    <h2>Batting</h2>
-    <p>AVG: {{ batting_avg }} | AB: {{ batting_totals.at_bats }} | H: {{ batting_totals.hits }} | RBI: {{ batting_totals.rbis }}</p>
-    <h2>Pitching</h2>
-    <p>ERA: {{ era }} | IP: {{ pitching_totals.innings_pitched }} | ER: {{ pitching_totals.earned_runs }}</p>
+
+<div class="mb-8">
+    <p class="font-scoreboard text-xs uppercase tracking-[0.3em] text-[#E8B23D]">Player</p>
+    <h1 class="font-display mt-2 text-4xl font-bold uppercase tracking-tight text-[#F2F0E6] md:text-5xl">{{ player }}</h1>
+</div>
+
+<div class="grid gap-6 md:grid-cols-2">
+
+    <div class="rounded-2xl border-4 border-[#0F1D16] bg-[#F4EFE1] p-4 text-[#16241B] shadow-lg md:p-6">
+        <h2 class="font-display mb-4 border-b-2 border-[#16241B]/20 pb-2 text-lg uppercase tracking-wide">Batting</h2>
+        <dl class="grid grid-cols-2 gap-y-3 sm:grid-cols-4">
+            <div>
+                <dt class="font-scoreboard text-xs uppercase tracking-wide text-[#16241B]/60">AVG</dt>
+                <dd class="font-scoreboard text-xl font-semibold text-[#8A5A0F]">{{ batting_avg }}</dd>
+            </div>
+            <div>
+                <dt class="font-scoreboard text-xs uppercase tracking-wide text-[#16241B]/60">AB</dt>
+                <dd class="font-scoreboard text-xl font-semibold">{{ batting_totals.at_bats }}</dd>
+            </div>
+            <div>
+                <dt class="font-scoreboard text-xs uppercase tracking-wide text-[#16241B]/60">H</dt>
+                <dd class="font-scoreboard text-xl font-semibold">{{ batting_totals.hits }}</dd>
+            </div>
+            <div>
+                <dt class="font-scoreboard text-xs uppercase tracking-wide text-[#16241B]/60">RBI</dt>
+                <dd class="font-scoreboard text-xl font-semibold">{{ batting_totals.rbis }}</dd>
+            </div>
+        </dl>
+    </div>
+
+    <div class="rounded-2xl border-4 border-[#0F1D16] bg-[#F4EFE1] p-4 text-[#16241B] shadow-lg md:p-6">
+        <h2 class="font-display mb-4 border-b-2 border-[#16241B]/20 pb-2 text-lg uppercase tracking-wide">Pitching</h2>
+        <dl class="grid grid-cols-3 gap-y-3">
+            <div>
+                <dt class="font-scoreboard text-xs uppercase tracking-wide text-[#16241B]/60">ERA</dt>
+                <dd class="font-scoreboard text-xl font-semibold text-[#8A5A0F]">{{ era }}</dd>
+            </div>
+            <div>
+                <dt class="font-scoreboard text-xs uppercase tracking-wide text-[#16241B]/60">IP</dt>
+                <dd class="font-scoreboard text-xl font-semibold">{{ pitching_totals.innings_pitched }}</dd>
+            </div>
+            <div>
+                <dt class="font-scoreboard text-xs uppercase tracking-wide text-[#16241B]/60">ER</dt>
+                <dd class="font-scoreboard text-xl font-semibold">{{ pitching_totals.earned_runs }}</dd>
+            </div>
+        </dl>
+    </div>
+
+</div>
+
 {% endblock %}

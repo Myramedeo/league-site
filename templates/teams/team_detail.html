@@ -1,13 +1,25 @@
 {% extends "base.html" %}
+{% block title %}{{ team.name }}{% endblock %}
 {% block content %}
-<h1>{{ team.name }}</h1>
-<h2>Roster</h2>
-<ul>
-    {% for entry in roster %}
-    <li>
-        <a href="{% url 'player_detail' entry.player.id %}">{{ entry.player }}</a>
-        — {{ entry.season }}
-    </li>
-    {% endfor %}
-</ul>
+
+<div class="mb-8">
+    <p class="font-scoreboard text-xs uppercase tracking-[0.3em] text-[#E8B23D]">Team</p>
+    <h1 class="font-display mt-2 text-4xl font-bold uppercase tracking-tight text-[#F2F0E6] md:text-5xl">{{ team.name }}</h1>
+</div>
+
+<div class="rounded-2xl border border-[#33493B] bg-[#1B2A22] p-4 md:p-6">
+    <h2 class="font-display mb-4 border-b border-[#33493B] pb-3 text-lg uppercase tracking-wide text-[#F2F0E6]">Roster</h2>
+    <ul class="divide-y divide-[#33493B]">
+        {% for entry in roster %}
+        <li class="flex items-center justify-between py-3">
+            <a href="{% url 'player_detail' entry.player.id %}"
+               class="font-medium text-[#F2F0E6] hover:text-[#E8B23D] transition-colors">{{ entry.player }}</a>
+            <span class="font-scoreboard text-sm text-[#8FA090]">{{ entry.season }}</span>
+        </li>
+        {% empty %}
+        <li class="py-6 text-center text-[#8FA090]">No players on the roster yet.</li>
+        {% endfor %}
+    </ul>
+</div>
+
 {% endblock %}

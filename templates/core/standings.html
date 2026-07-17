@@ -1,20 +1,41 @@
 {% extends "base.html" %}
+{% block title %}Standings{% endblock %}
 {% block content %}
-    <h1>Standings — {{ season }}</h1>
-    <table>
-        <thead>
-        <tr><th>Team</th><th>W</th><th>L</th><th>T</th><th>Pct</th></tr>
-        </thead>
-        <tbody>
-        {% for s in standings %}
-            <tr>
-            <td>{{ s.team }}</td>
-            <td>{{ s.wins }}</td>
-            <td>{{ s.losses }}</td>
-            <td>{{ s.ties }}</td>
-            <td>{{ s.win_pct }}</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+
+<div class="mb-8">
+    <p class="font-scoreboard text-xs uppercase tracking-[0.3em] text-[#E8B23D]">{{ season }}</p>
+    <h1 class="font-display mt-2 text-4xl font-bold uppercase tracking-tight text-[#F2F0E6] md:text-5xl">Standings</h1>
+</div>
+
+<div class="rounded-2xl border-4 border-[#0F1D16] bg-[#F4EFE1] p-4 text-[#16241B] shadow-lg md:p-6">
+    <div class="overflow-x-auto">
+        <table class="w-full border-collapse text-left">
+            <thead>
+                <tr class="border-b-2 border-[#16241B]/20">
+                    <th class="font-display px-3 py-2 uppercase tracking-wide text-[#16241B]">Team</th>
+                    <th class="font-scoreboard px-3 py-2 text-right text-sm uppercase tracking-wide text-[#16241B]">W</th>
+                    <th class="font-scoreboard px-3 py-2 text-right text-sm uppercase tracking-wide text-[#16241B]">L</th>
+                    <th class="font-scoreboard px-3 py-2 text-right text-sm uppercase tracking-wide text-[#16241B]">T</th>
+                    <th class="font-scoreboard px-3 py-2 text-right text-sm uppercase tracking-wide text-[#16241B]">Pct</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in standings %}
+                <tr class="border-b border-[#16241B]/10 hover:bg-black/5">
+                    <td class="px-3 py-2.5 font-medium">{{ s.team }}</td>
+                    <td class="font-scoreboard px-3 py-2.5 text-right">{{ s.wins }}</td>
+                    <td class="font-scoreboard px-3 py-2.5 text-right">{{ s.losses }}</td>
+                    <td class="font-scoreboard px-3 py-2.5 text-right">{{ s.ties }}</td>
+                    <td class="font-scoreboard px-3 py-2.5 text-right">{{ s.win_pct }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-3 py-6 text-center text-[#16241B]/60">No standings yet — check back once games have been played.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
 {% endblock %}

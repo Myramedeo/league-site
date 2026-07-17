@@ -1,9 +1,23 @@
 {% extends "base.html" %}
+{% block title %}Teams{% endblock %}
 {% block content %}
-<h1>Teams</h1>
-<ul>
+
+<div class="mb-8">
+    <h1 class="font-display text-4xl font-bold uppercase tracking-tight text-[#F2F0E6] md:text-5xl">Teams</h1>
+</div>
+
+<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
     {% for team in teams %}
-    <li><a href="{% url 'team_detail' team.id %}">{{ team.name }}</a></li>
+    <a href="{% url 'team_detail' team.id %}"
+       class="group flex items-center justify-between rounded-xl border border-[#33493B] bg-[#1B2A22] p-5 transition-colors hover:border-[#E8B23D]">
+        <span class="font-display uppercase tracking-wide text-[#F2F0E6] group-hover:text-[#E8B23D]">{{ team.name }}</span>
+        <span class="font-scoreboard text-[#8FA090] group-hover:text-[#E8B23D]" aria-hidden="true">&rarr;</span>
+    </a>
+    {% empty %}
+    <p class="col-span-full rounded-xl border border-dashed border-[#3F5847] bg-[#1B2A22] p-8 text-center text-[#8FA090]">
+        No teams have been added yet.
+    </p>
     {% endfor %}
-</ul>
+</div>
+
 {% endblock %}

@@ -1,16 +1,38 @@
 {% extends "base.html" %}
+{% block title %}Schedule{% endblock %}
 {% block content %}
-    <h1>Schedule — {{ season }}</h1>
-    <ul>
+
+<div class="mb-8">
+    <p class="font-scoreboard text-xs uppercase tracking-[0.3em] text-[#E8B23D]">{{ season }}</p>
+    <h1 class="font-display mt-2 text-4xl font-bold uppercase tracking-tight text-[#F2F0E6] md:text-5xl">Schedule</h1>
+</div>
+
+<div class="overflow-hidden rounded-2xl border border-[#33493B]">
+    <ul class="divide-y divide-[#33493B]">
         {% for game in games %}
-        <li>
-            {{ game.date }}: {{ game.away_team }} @ {{ game.home_team }}
+        <li class="flex flex-col gap-2 bg-[#1B2A22] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+            <div class="flex items-center gap-4">
+                <span class="font-scoreboard w-24 shrink-0 text-xs uppercase tracking-wide text-[#8FA090]">{{ game.date }}</span>
+                <span class="text-[#F2F0E6]">
+                    <span class="font-medium">{{ game.away_team }}</span>
+                    <span class="mx-1 text-[#8FA090]">@</span>
+                    <span class="font-medium">{{ game.home_team }}</span>
+                </span>
+            </div>
             {% if game.result %}
-            — Final: {{ game.result.away_score }}-{{ game.result.home_score }}
+            <span class="font-scoreboard w-fit rounded-md bg-[#E8B23D]/15 px-3 py-1 text-sm font-semibold text-[#E8B23D]">
+                Final: {{ game.result.away_score }}-{{ game.result.home_score }}
+            </span>
             {% else %}
-            — Upcoming
+            <span class="font-scoreboard w-fit rounded-md border border-[#3F5847] px-3 py-1 text-sm uppercase tracking-wide text-[#8FA090]">
+                Upcoming
+            </span>
             {% endif %}
         </li>
+        {% empty %}
+        <li class="bg-[#1B2A22] p-8 text-center text-[#8FA090]">No games scheduled yet.</li>
         {% endfor %}
     </ul>
+</div>
+
 {% endblock %}
