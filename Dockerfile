@@ -21,22 +21,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the project
 COPY . .
 
-# Set environment variables for Django settings
-ARG SECRET_KEY
-ENV SECRET_KEY=$SECRET_KEY
-
-ARG DEBUG
-ENV DEBUG=$DEBUG
-
-ARG ALLOWED_HOSTS
-ENV ALLOWED_HOSTS=$ALLOWED_HOSTS
-
-ARG DATABASE_URL
-ENV DATABASE_URL=$DATABASE_URL
-
-ARG CSRF_TRUSTED_ORIGINS
-ENV CSRF_TRUSTED_ORIGINS=$CSRF_TRUSTED_ORIGINS
-
 # Build Tailwind and collect static files
 RUN python manage.py tailwind install && \
     python manage.py tailwind build && \
