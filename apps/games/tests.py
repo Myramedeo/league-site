@@ -1,9 +1,12 @@
 from datetime import time
+from types import SimpleNamespace
 
+from django.contrib import admin
 from django.test import TestCase
 from django.urls import reverse
 from teams.models import Season, Team
-from games.models import Game, GameResult
+from games.admin import InningScoreInline
+from games.models import Game, GameResult, InningScore
 from games.serializers import GameSerializer
 from games.services import compute_standings
 
@@ -62,6 +65,16 @@ class GameResultTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Main Field')
         self.assertContains(response, '1-1')
+
+    def test_inning_score_inline_only_adds_missing_forms_for_existing_result(self):
+        class DummyQuerySet:
+            def count(self):
+                return 2
+
+        inline = InningScoreInline(InningScore, admin.site)
+        result = SimpleNamespace(innings=DummyQuerySet())
+
+        self.assertEqual(inline.get_extra(None, result), 7)
 
 class StandingsTests(TestCase):
     def setUp(self):

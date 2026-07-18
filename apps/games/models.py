@@ -37,47 +37,35 @@ class Game(models.Model):
 
 
 class GameResult(models.Model):
-    game = models.OneToOneField(Game, on_delete=models.CASCADE, related_name='result')
-    home_runs = models.JSONField(default=list, blank=True)
-    away_runs = models.JSONField(default=list, blank=True)
+    game = models.OneToOneField(
+        Game,
+        on_delete=models.CASCADE,
+        related_name="result"
+    )
+
     home_hits = models.PositiveSmallIntegerField(default=0, blank=True, null=True)
     away_hits = models.PositiveSmallIntegerField(default=0, blank=True, null=True)
     home_errors = models.PositiveSmallIntegerField(default=0, blank=True, null=True)
     away_errors = models.PositiveSmallIntegerField(default=0, blank=True, null=True)
-    home_score = models.PositiveSmallIntegerField(default=0, blank=True, null=True)
-    away_score = models.PositiveSmallIntegerField(default=0, blank=True, null=True)
+
+    @property
+    def home_runs(self):
+        return list(self.innings.values_list("home_runs", flat=True))
+
+    @property
+    def away_runs(self):
+        return list(self.innings.values_list("away_runs", flat=True))
+
+    @property
+    def home_score(self):
+        return sum(self.home_runs)
+
+    @property
+    def away_score(self):
+        return sum(self.away_runs)
 
     def __str__(self):
         return f"{self.game}: {self.away_score}-{self.home_score}"
-
-    def _coerce_runs(self, runs):
-        if not runs:
-            return []
-        return [int(run) for run in runs]
-
-    def _sum_runs(self, runs):
-        return sum(self._coerce_runs(runs))
-
-    def _update_scores_from_innings(self):
-        home_runs = self._coerce_runs(self.home_runs)
-        away_runs = self._coerce_runs(self.away_runs)
-
-        if home_runs or away_runs:
-            self.home_score = self._sum_runs(home_runs)
-            self.away_score = self._sum_runs(away_runs)
-
-    def save(self, *args, **kwargs):
-        self._update_scores_from_innings()
-        super().save(*args, **kwargs)
-
-    def clean(self):
-        from django.core.exceptions import ValidationError
-
-        home_runs = self._coerce_runs(self.home_runs)
-        away_runs = self._coerce_runs(self.away_runs)
-
-        if len(home_runs) > 9 or len(away_runs) > 9:
-            raise ValidationError("Runs can only be recorded for up to 9 innings.")
 
     @property
     def winner(self):
@@ -85,4 +73,27 @@ class GameResult(models.Model):
             return self.game.home_team
         elif self.away_score > self.home_score:
             return self.game.away_team
-        return None  # tie
+        return None
+    
+
+class InningScore(models.Model):
+    result = models.ForeignKey(
+        GameResult,
+        on_delete=models.CASCADE,
+        related_name="innings"
+    )
+    inning = models.PositiveSmallIntegerField()
+    home_runs = models.PositiveSmallIntegerField(default=0)
+    away_runs = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["inning"]
+        unique_together = ("result", "inning")
+
+    def __str__(self):
+        return f"Inning {self.inning}: {self.away_runs}-{self.home_runs}"
+    
+    def save(self, *args, **kwargs):
+        if not self.inning:
+            self.inning = self.result.innings.count() + 1
+        super().save(*args, **kwargs)

@@ -34,6 +34,7 @@ router.register('players', PlayerViewSet)
 router.register('games', GameViewSet)
 
 urlpatterns = [
+    path('_nested_admin/', include('nested_admin.urls')),
     path('admin/', admin.site.urls),
     path('teams/', include('teams.urls')),
     path('players/', include('players.urls')),

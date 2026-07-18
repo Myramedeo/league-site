@@ -1,5 +1,9 @@
 {
     "chat.tools.terminal.autoApprove": {
-        "c:/GitHub/league-site/venv/Scripts/python.exe": true
+        "c:/GitHub/league-site/venv/Scripts/python.exe": true,
+        "/^python manage\\.py test apps\\.games\\.tests --settings=league_site\\.settings$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
     }
 }

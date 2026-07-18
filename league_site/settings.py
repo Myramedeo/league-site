@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'tailwind',
     'theme',
+    'nested_admin',
 ]
 
 TAILWIND_APP_NAME = 'theme'
