@@ -22,7 +22,7 @@ from apps.core import views as core_views
 from rest_framework.routers import DefaultRouter
 from teams.views import TeamViewSet, SeasonViewSet
 from players.views import PlayerViewSet
-from games.views import GameViewSet
+from games.views import GameViewSet, game_detail
 from core.views import standings_api
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -37,6 +37,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('teams/', include('teams.urls')),
     path('players/', include('players.urls')),
+    path('games/<int:game_id>/', game_detail, name='game_detail'),
     path('standings/', core_views.standings, name='standings'),
     path('stats/', core_views.leaderboards, name='leaderboards'),
     path('schedule/', core_views.schedule, name='schedule'),

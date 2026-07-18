@@ -5,7 +5,13 @@ from teams.serializers import TeamSerializer
 class GameResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = GameResult
-        fields = ['home_score', 'away_score']
+        fields = [
+            'home_runs', 'away_runs',
+            'home_hits', 'away_hits',
+            'home_errors', 'away_errors',
+            'home_score', 'away_score',
+        ]
+        read_only_fields = ['home_score', 'away_score']
 
 class GameSerializer(serializers.ModelSerializer):
     home_team = TeamSerializer(read_only=True)

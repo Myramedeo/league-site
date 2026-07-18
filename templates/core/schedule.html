@@ -32,9 +32,11 @@
         </div>
 
         <div class="text-sm text-[#F2F0E6]">
-            <span class="font-medium">{{ game.away_team }}</span>
-            <span class="mx-2 text-[#8FA090]">@</span>
-            <span class="font-medium">{{ game.home_team }}</span>
+            <a href="{% url 'game_detail' game.id %}" class="font-medium text-[#F2F0E6] transition-colors hover:text-[#E8B23D]">
+                <span class="font-medium">{{ game.away_team }}</span>
+                <span class="mx-2 text-[#8FA090]">@</span>
+                <span class="font-medium">{{ game.home_team }}</span>
+            </a>
         </div>
 
         <div class="text-sm uppercase tracking-wide">
@@ -75,9 +77,9 @@
 
         <div>
             {% if game.result %}
-            <span class="font-scoreboard w-fit rounded-md bg-[#E8B23D]/15 px-3 py-1 text-sm font-semibold text-[#E8B23D]">
+            <a href="{% url 'game_detail' game.id %}" class="font-scoreboard w-fit rounded-md bg-[#E8B23D]/15 px-3 py-1 text-sm font-semibold text-[#E8B23D] transition-colors hover:bg-[#E8B23D]/25">
                 {{ game.result.away_score }}-{{ game.result.home_score }}
-            </span>
+            </a>
             {% else %}
             <span class="font-scoreboard w-fit rounded-md border border-[#3F5847] px-3 py-1 text-sm uppercase tracking-wide text-[#8FA090]">
                 Upcoming
