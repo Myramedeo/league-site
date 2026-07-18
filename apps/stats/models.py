@@ -7,10 +7,10 @@ class BattingStatLine(models.Model):
     game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='batting_lines')
 
     at_bats = models.PositiveSmallIntegerField(default=0)
-    hits = models.PositiveSmallIntegerField(default=0)
-    walks = models.PositiveSmallIntegerField(default=0)
     runs = models.PositiveSmallIntegerField(default=0)
+    hits = models.PositiveSmallIntegerField(default=0)
     rbis = models.PositiveSmallIntegerField(default=0)
+    walks = models.PositiveSmallIntegerField(default=0)
     strikeouts = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
@@ -41,10 +41,12 @@ class PitchingStatLine(models.Model):
     game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name='pitching_lines')
 
     innings_pitched = models.DecimalField(max_digits=4, decimal_places=1, default=0)  # e.g. 5.2
+    hits_allowed = models.PositiveSmallIntegerField(default=0)
+    runs_allowed = models.PositiveSmallIntegerField(default=0)
     earned_runs = models.PositiveSmallIntegerField(default=0)
     walks_allowed = models.PositiveSmallIntegerField(default=0)
     strikeouts = models.PositiveSmallIntegerField(default=0)
-    hits_allowed = models.PositiveSmallIntegerField(default=0)
+    pitches_thrown = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
         unique_together = ('player', 'game')
