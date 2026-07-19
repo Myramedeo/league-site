@@ -18,6 +18,10 @@ class TeamStanding:
             return 0.0
         # ties count as half a win, the common convention
         return round((self.wins + 0.5 * self.ties) / self.games_played, 3)
+    
+    @property
+    def win_pct_display(self):
+        return f"{self.win_pct:.3f}".lstrip("0")
 
     def __repr__(self):
         return f"<{self.team}: {self.wins}-{self.losses}-{self.ties}>"
