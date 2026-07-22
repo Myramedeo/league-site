@@ -3,6 +3,7 @@ from teams.models import Season
 from games.services import compute_standings
 from stats.services import batting_leaderboard, era_leaderboard
 from games.models import Game
+from announcements.models import Announcement
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -45,9 +46,11 @@ def leaderboards(request):
 def home(request):
     season = Season.objects.order_by('-year').first()
     standings_list = compute_standings(season) if season else []
+    announcements = Announcement.objects.filter(active=True)
     return render(request, 'core/home.html', {
         'season': season,
         'standings': standings_list,
+        'announcements': announcements,
     })
 
 @cache_page(60 * 15)  # 15 minutes

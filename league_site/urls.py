@@ -24,10 +24,12 @@ from teams.views import TeamViewSet, SeasonViewSet
 from players.views import PlayerViewSet
 from games.views import GameViewSet, game_detail
 from core.views import standings_api
+from announcements.views import AnnouncementViewSet
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 router = DefaultRouter()
+router.register('announcements', AnnouncementViewSet, basename='announcement')
 router.register('teams', TeamViewSet)
 router.register('seasons', SeasonViewSet)
 router.register('players', PlayerViewSet)
