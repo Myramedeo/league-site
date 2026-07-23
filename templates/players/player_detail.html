@@ -31,24 +31,6 @@
         </dl>
     </div>
 
-    <div class="rounded-2xl border-4 border-[#0F1D16] bg-[#F4EFE1] p-4 text-[#16241B] shadow-lg md:p-6">
-        <h2 class="font-display mb-4 border-b-2 border-[#16241B]/20 pb-2 text-lg uppercase tracking-wide">Pitching</h2>
-        <dl class="grid grid-cols-3 gap-y-3">
-            <div>
-                <dt class="font-scoreboard text-xs uppercase tracking-wide text-[#16241B]/60">ERA</dt>
-                <dd class="font-scoreboard text-xl font-semibold text-[#8A5A0F]">{{ era }}</dd>
-            </div>
-            <div>
-                <dt class="font-scoreboard text-xs uppercase tracking-wide text-[#16241B]/60">IP</dt>
-                <dd class="font-scoreboard text-xl font-semibold">{{ pitching_totals.innings_pitched }}</dd>
-            </div>
-            <div>
-                <dt class="font-scoreboard text-xs uppercase tracking-wide text-[#16241B]/60">ER</dt>
-                <dd class="font-scoreboard text-xl font-semibold">{{ pitching_totals.earned_runs }}</dd>
-            </div>
-        </dl>
-    </div>
-
 </div>
 
 {% endblock %}

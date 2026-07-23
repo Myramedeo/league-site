@@ -84,7 +84,7 @@
 
 <div class="mt-8 grid gap-6 lg:grid-cols-2">
     <div class="rounded-2xl border border-[#33493B] bg-[#1B2A22] p-4 md:p-6">
-        <h2 class="font-display mb-4 border-b border-[#33493B] pb-3 text-lg uppercase tracking-wide text-[#F2F0E6]">{{ game.away_team }} batting</h2>
+        <h2 class="font-display mb-4 border-b border-[#33493B] pb-3 text-lg uppercase tracking-wide text-[#F2F0E6]">{{ game.away_team }}</h2>
         {% if away_batting_lines %}
         <div class="overflow-hidden rounded-xl border border-[#33493B]">
             <div class="grid grid-cols-[1.4fr_repeat(6,minmax(0,0.6fr))] bg-[#24372F] px-3 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#8FA090]">
@@ -114,7 +114,7 @@
     </div>
 
     <div class="rounded-2xl border border-[#33493B] bg-[#1B2A22] p-4 md:p-6">
-        <h2 class="font-display mb-4 border-b border-[#33493B] pb-3 text-lg uppercase tracking-wide text-[#F2F0E6]">{{ game.home_team }} batting</h2>
+        <h2 class="font-display mb-4 border-b border-[#33493B] pb-3 text-lg uppercase tracking-wide text-[#F2F0E6]">{{ game.home_team }}</h2>
         {% if home_batting_lines %}
         <div class="overflow-hidden rounded-xl border border-[#33493B]">
             <div class="grid grid-cols-[1.4fr_repeat(6,minmax(0,0.6fr))] bg-[#24372F] px-3 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#8FA090]">
@@ -140,72 +140,6 @@
         </div>
         {% else %}
         <p class="text-[#8FA090]">No batting lines recorded yet.</p>
-        {% endif %}
-    </div>
-</div>
-
-<div class="mt-8 grid gap-6 lg:grid-cols-2">
-    <div class="rounded-2xl border border-[#33493B] bg-[#1B2A22] p-4 md:p-6">
-        <h2 class="font-display mb-4 border-b border-[#33493B] pb-3 text-lg uppercase tracking-wide text-[#F2F0E6]">{{ game.away_team }} pitching</h2>
-        {% if away_pitching_lines %}
-        <div class="overflow-hidden rounded-xl border border-[#33493B]">
-            <div class="grid grid-cols-[1.4fr_repeat(7,minmax(0,0.6fr))] bg-[#24372F] px-3 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#8FA090]">
-                <span>Player</span>
-                <span>IP</span>
-                <span>H</span>
-                <span>R</span>
-                <span>ER</span>
-                <span>BB</span>
-                <span>K</span>
-                <span>PT</span>
-            </div>
-            {% for line in away_pitching_lines %}
-            <div class="grid grid-cols-[1.4fr_repeat(7,minmax(0,0.6fr))] border-t border-[#33493B] px-3 py-3 text-sm text-[#F2F0E6]">
-                <span>{{ line.player }}</span>
-                <span>{{ line.innings_pitched }}</span>
-                <span>{{ line.hits_allowed }}</span>
-                <span>{{ line.runs_allowed }}</span>
-                <span>{{ line.earned_runs }}</span>
-                <span>{{ line.walks_allowed }}</span>
-                <span>{{ line.strikeouts }}</span>
-                <span>{{ line.pitches_thrown }}</span>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <p class="text-[#8FA090]">No pitching lines recorded yet.</p>
-        {% endif %}
-    </div>
-
-    <div class="rounded-2xl border border-[#33493B] bg-[#1B2A22] p-4 md:p-6">
-        <h2 class="font-display mb-4 border-b border-[#33493B] pb-3 text-lg uppercase tracking-wide text-[#F2F0E6]">{{ game.home_team }} pitching</h2>
-        {% if home_pitching_lines %}
-        <div class="overflow-hidden rounded-xl border border-[#33493B]">
-            <div class="grid grid-cols-[1.4fr_repeat(7,minmax(0,0.6fr))] bg-[#24372F] px-3 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#8FA090]">
-                <span>Player</span>
-                <span>IP</span>
-                <span>H</span>
-                <span>R</span>
-                <span>ER</span>
-                <span>BB</span>
-                <span>K</span>
-                <span>PT</span>
-            </div>
-            {% for line in home_pitching_lines %}
-            <div class="grid grid-cols-[1.4fr_repeat(7,minmax(0,0.6fr))] border-t border-[#33493B] px-3 py-3 text-sm text-[#F2F0E6]">
-                <span>{{ line.player }}</span>
-                <span>{{ line.innings_pitched }}</span>
-                <span>{{ line.hits_allowed }}</span>
-                <span>{{ line.runs_allowed }}</span>
-                <span>{{ line.earned_runs }}</span>
-                <span>{{ line.walks_allowed }}</span>
-                <span>{{ line.strikeouts }}</span>
-                <span>{{ line.pitches_thrown }}</span>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <p class="text-[#8FA090]">No pitching lines recorded yet.</p>
         {% endif %}
     </div>
 </div>

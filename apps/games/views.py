@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, render
 from rest_framework import viewsets
 from players.models import Roster
-from stats.models import BattingStatLine, PitchingStatLine
+from stats.models import BattingStatLine
 from .models import Game
 from .serializers import GameSerializer
 
@@ -26,13 +26,10 @@ def game_detail(request, game_id):
     batting_lines = list(
         BattingStatLine.objects.filter(game=game).select_related('player').order_by('player__last_name', 'player__first_name')
     )
-    pitching_lines = list(
-        PitchingStatLine.objects.filter(game=game).select_related('player').order_by('player__last_name', 'player__first_name')
-    )
 
     roster_by_player = {
         roster.player_id: roster.team_id
-        for roster in Roster.objects.filter(player__in=[line.player_id for line in batting_lines + pitching_lines], season=game.season)
+        for roster in Roster.objects.filter(player__in=[line.player_id for line in batting_lines], season=game.season)
     }
 
     def split_lines(lines):
@@ -47,7 +44,6 @@ def game_detail(request, game_id):
         return home_lines, away_lines
 
     home_batting_lines, away_batting_lines = split_lines(batting_lines)
-    home_pitching_lines, away_pitching_lines = split_lines(pitching_lines)
 
     home_runs = [int(run) for run in (game.result.home_runs if game.result else [])]
     away_runs = [int(run) for run in (game.result.away_runs if game.result else [])]
@@ -64,7 +60,5 @@ def game_detail(request, game_id):
         'inning_rows': inning_rows,
         'home_batting_lines': home_batting_lines,
         'away_batting_lines': away_batting_lines,
-        'home_pitching_lines': home_pitching_lines,
-        'away_pitching_lines': away_pitching_lines,
         'inning_count': max(len(home_runs), len(away_runs), 9),
     })

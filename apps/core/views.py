@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from teams.models import Season
 from games.services import compute_standings
-from stats.services import batting_leaderboard, era_leaderboard
+from stats.services import batting_leaderboard
 from games.models import Game
 from announcements.models import Announcement
 
@@ -40,7 +40,6 @@ def leaderboards(request):
     return render(request, 'core/leaderboards.html', {
         'season': season,
         'batting_leaders': batting_leaderboard(season, min_at_bats=5) if season else [],
-        'era_leaders': era_leaderboard(season, min_innings=3) if season else [],
     })
 
 def home(request):

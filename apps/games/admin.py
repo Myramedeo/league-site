@@ -1,7 +1,7 @@
 import nested_admin
 from django.contrib import admin
 from .models import Game, GameResult, InningScore
-from stats.admin import BattingStatLineInline, PitchingStatLineInline
+from stats.admin import BattingStatLineInline
 
 from django.forms.models import BaseInlineFormSet
 from django.core.exceptions import ValidationError
@@ -65,5 +65,4 @@ class GameAdmin(nested_admin.NestedModelAdmin):
     inlines = [
         GameResultInline,
         BattingStatLineInline,
-        PitchingStatLineInline
     ]
