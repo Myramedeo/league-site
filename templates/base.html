@@ -34,13 +34,49 @@
     </nav>
 
     <main class="mx-auto max-w-6xl px-6 py-10">
+        {% if messages %}
+        <div class="mb-6 space-y-3">
+            {% for message in messages %}
+            <div class="rounded-lg border border-[#3F5847] bg-[#223328] px-4 py-3 text-sm text-[#F2F0E6]">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
         {% block content %}{% endblock %}
     </main>
 
     <footer class="mt-16 border-t border-[#33493B] py-6">
-        <p class="mx-auto max-w-6xl px-6 font-scoreboard text-xs uppercase tracking-[0.15em] text-[#5E6E60]">
-            HOBO 55+ Division &middot; Box scores updated after every game
-        </p>
+        <div class="mx-auto flex max-w-6xl flex-col gap-5 px-6 md:flex-row md:items-end md:justify-between">
+            <div>
+                <p class="font-scoreboard text-xs uppercase tracking-[0.15em] text-[#5E6E60]">
+                    HOBO 55+ Division &middot; Box scores updated after every game
+                </p>
+            </div>
+            <form action="{% url 'newsletter_signup' %}" method="post" class="w-full max-w-md md:w-auto">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.path }}">
+                <label for="newsletter-email" class="mb-2 block font-scoreboard text-[10px] uppercase tracking-[0.2em] text-[#8FA090]">
+                    Newsletter updates
+                </label>
+                <div class="flex gap-2">
+                    <input
+                        id="newsletter-email"
+                        name="email"
+                        type="email"
+                        required
+                        placeholder="you@example.com"
+                        class="w-full rounded-md border border-[#3F5847] bg-[#1B2A22] px-3 py-2 text-sm text-[#F2F0E6] placeholder:text-[#6F7D72] focus:border-[#E8B23D] focus:outline-none"
+                    >
+                    <button
+                        type="submit"
+                        class="shrink-0 whitespace-nowrap rounded-md bg-[#E8B23D] px-4 py-2 text-sm font-semibold text-[#16241B] transition-colors hover:bg-[#F2C463]"
+                    >
+                        Sign up
+                    </button>
+                </div>
+            </form>
+        </div>
     </footer>
 
 </body>

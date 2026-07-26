@@ -65,6 +65,7 @@ PyYAML==6.0.3
 referencing==0.37.0
 regex==2026.5.9
 requests==2.34.2
+resend==2.34.0
 rich==15.0.0
 rpds-py==2026.6.3
 safetensors==0.7.0

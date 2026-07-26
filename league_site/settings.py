@@ -10,7 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
-import sys
+import os, sys
 from pathlib import Path
 
 from decouple import config
@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'games',
     'stats',
     'core',
+    'newsletter',
     'drf_spectacular',
     'tailwind',
     'theme',
@@ -97,6 +98,14 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'league_site.wsgi.application'
+
+# Resend API Key Configuration
+
+RESEND_API_KEY = config('RESEND_API_KEY', default='')
+RESEND_FROM_EMAIL = config('RESEND_FROM_EMAIL', default='')
+RESEND_REPLY_TO = config('RESEND_REPLY_TO', default='')
+NEWSLETTER_SEND_WELCOME_EMAIL = config('NEWSLETTER_SEND_WELCOME_EMAIL', default=True, cast=bool)
+SITE_BASE_URL = config('SITE_BASE_URL', default='http://localhost:8000')
 
 # Django Debug Toolbar
 
