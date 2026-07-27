@@ -29,9 +29,13 @@
                 <a href="{% url 'standings' %}" class="text-[#C9CFC3] hover:text-[#E8B23D] transition-colors">Standings</a>
                 <a href="{% url 'leaderboards' %}" class="text-[#C9CFC3] hover:text-[#E8B23D] transition-colors">Stats</a>
                 <a href="{% url 'schedule' %}" class="text-[#C9CFC3] hover:text-[#E8B23D] transition-colors">Schedule</a>
+                {% if request.user.is_staff %}
+                <a href="{% url 'game_entry:portal' %}" class="text-[#E8B23D] hover:text-[#F2C463] transition-colors">Game Entry</a>
+                {% endif %}
             </div>
         </div>
     </nav>
+
 
     <main class="mx-auto max-w-6xl px-6 py-10">
         {% if messages %}

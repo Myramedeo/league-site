@@ -38,6 +38,7 @@ router.register('games', GameViewSet)
 urlpatterns = [
     path('_nested_admin/', include('nested_admin.urls')),
     path('admin/', admin.site.urls),
+    path('game-entry/', include('game_entry.urls')),
     path('newsletter/', include('newsletter.urls')),
     path('teams/', include('teams.urls')),
     path('players/', include('players.urls')),

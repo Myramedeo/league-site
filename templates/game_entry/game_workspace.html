@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Scoring Workspace{% endblock %}
+
+{% block content %}
+<section class="space-y-8">
+    <div class="rounded-3xl border border-[#33493B] bg-[#132119] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+        <p class="font-scoreboard text-xs uppercase tracking-[0.2em] text-[#E8B23D]">Scoring Workspace</p>
+        <h1 class="font-display mt-4 text-4xl uppercase tracking-wide text-[#F2F0E6]">{{ game.away_team }} @ {{ game.home_team }}</h1>
+        <p class="mt-3 text-sm uppercase tracking-[0.25em] text-[#8FA090]">
+            {{ game.date }}{% if game.scheduled_time %} · {{ game.scheduled_time }}{% endif %}
+            {% if game.venue %} · {{ game.venue }}{% endif %}
+        </p>
+        <p class="mt-6 max-w-3xl text-sm leading-7 text-[#C9CFC3]">
+            This game shell is ready for the next step: lineup setup, inning state, and play-by-play event entry.
+            For now, use this page as the selected-game landing area.
+        </p>
+    </div>
+
+    <div class="rounded-3xl border border-[#3F5847] bg-[#1A2A21] p-6">
+        <p class="font-scoreboard text-xs uppercase tracking-[0.2em] text-[#E8B23D]">Coming Next</p>
+        <p class="mt-3 text-sm text-[#C9CFC3]">Build the scoring controls here: batting order, pitch result, runners, outs, and inning transitions.</p>
+    </div>
+</section>
+{% endblock %}

@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'teams',
     'players',
     'games',
+    'game_entry',
     'stats',
     'core',
     'newsletter',
