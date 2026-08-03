@@ -1,9 +1,12 @@
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth import login
+from django.contrib.auth.forms import AuthenticationForm
 from django.db import transaction
 from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from games.models import Game
 from players.models import Player, Roster
@@ -13,7 +16,29 @@ from .forms import GameStateForm, LineupSubstitutionForm, TeamLineupForm
 from .models import LineupSpot, LineupSubstitution, PlateAppearance, ScoringSession, TeamLineup
 
 
-@staff_member_required
+def staff_sign_in(request):
+	next_url = _safe_next_url(request, default=reverse('game_entry:portal'))
+
+	if request.user.is_authenticated and request.user.is_staff:
+		return redirect(next_url)
+
+	form = AuthenticationForm(request, data=request.POST or None)
+	if request.method == 'POST' and form.is_valid():
+		user = form.get_user()
+		if not user.is_staff:
+			form.add_error(None, 'This account does not have staff access for game entry.')
+		else:
+			login(request, user)
+			messages.success(request, 'Signed in. You can now access game entry tools.')
+			return redirect(next_url)
+
+	return render(request, 'game_entry/sign_in.html', {
+		'form': form,
+		'next': next_url,
+	})
+
+
+@staff_member_required(login_url='game_entry:sign_in')
 def portal(request):
 	season = Season.objects.order_by('-year').first()
 	games = (
@@ -28,7 +53,7 @@ def portal(request):
 	})
 
 
-@staff_member_required
+@staff_member_required(login_url='game_entry:sign_in')
 def game_workspace(request, game_id):
 	game = get_object_or_404(
 		Game.objects.select_related('season', 'home_team', 'away_team', 'result'),
@@ -279,6 +304,17 @@ def _combined_roster_for_game(game):
 
 def _get_team_lineup(session, team_id):
 	return TeamLineup.objects.filter(session=session, team_id=team_id).prefetch_related('spots__player').first()
+
+
+def _safe_next_url(request, default):
+	next_url = request.POST.get('next') or request.GET.get('next')
+	if next_url and url_has_allowed_host_and_scheme(
+		url=next_url,
+		allowed_hosts={request.get_host()},
+		require_https=request.is_secure(),
+	):
+		return next_url
+	return default
 
 
 def _save_lineup(session, team_id, ordered_players):

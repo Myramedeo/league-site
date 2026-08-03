@@ -62,7 +62,7 @@ class GameEntryPortalTests(TestCase):
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, 302)
-        self.assertIn(reverse('admin:login'), response.url)
+        self.assertIn(reverse('game_entry:sign_in'), response.url)
 
     def test_non_staff_user_redirected_to_admin_login(self):
         non_staff_user = self.user_model.objects.create_user(
@@ -75,7 +75,40 @@ class GameEntryPortalTests(TestCase):
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, 302)
-        self.assertIn(reverse('admin:login'), response.url)
+        self.assertIn(reverse('game_entry:sign_in'), response.url)
+
+    def test_staff_sign_in_page_renders(self):
+        response = self.client.get(reverse('game_entry:sign_in'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'game_entry/sign_in.html')
+        self.assertContains(response, 'Staff Sign In')
+
+    def test_staff_sign_in_redirects_to_game_entry_portal(self):
+        response = self.client.post(reverse('game_entry:sign_in'), {
+            'username': self.staff_user.username,
+            'password': 'test-pass-123',
+            'next': reverse('game_entry:portal'),
+        })
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('game_entry:portal'))
+
+    def test_non_staff_cannot_sign_in_to_game_entry(self):
+        non_staff_user = self.user_model.objects.create_user(
+            username='bench_player',
+            password='test-pass-123',
+            is_staff=False,
+        )
+
+        response = self.client.post(reverse('game_entry:sign_in'), {
+            'username': non_staff_user.username,
+            'password': 'test-pass-123',
+            'next': reverse('game_entry:portal'),
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'does not have staff access')
 
     def test_staff_user_can_open_game_workspace(self):
         game = Game.objects.create(
