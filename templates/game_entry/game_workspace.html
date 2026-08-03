@@ -13,8 +13,6 @@
             {{ game.date }}{% if game.scheduled_time %} · {{ game.scheduled_time }}{% endif %}
             {% if game.venue %} · {{ game.venue }}{% endif %}
         </p>
-        <p class="mt-6 max-w-3xl text-sm leading-7 text-[#C9CFC3]">Set lineups first, then track game state and plate appearances as the game progresses.</p>
-
         {% if session.has_started %}
         <p class="mt-6 inline-flex rounded-full border border-[#E8B23D] bg-[#E8B23D]/10 px-4 py-2 font-scoreboard text-xs uppercase tracking-[0.2em] text-[#E8B23D]">
             Lineups locked after start
