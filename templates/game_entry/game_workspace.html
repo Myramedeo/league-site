@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Scoring Workspace{% endblock %}
+
+{% block content %}
+<section class="space-y-8">
+    <div id="workspace-alerts" class="space-y-3"></div>
+
+    <div class="rounded-3xl border border-[#33493B] bg-[#132119] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+        <p class="font-scoreboard text-xs uppercase tracking-[0.2em] text-[#E8B23D]">Scoring Workspace</p>
+        <h1 class="font-display mt-4 text-4xl uppercase tracking-wide text-[#F2F0E6]">{{ game.away_team }} @ {{ game.home_team }}</h1>
+        <p class="mt-3 text-sm uppercase tracking-[0.25em] text-[#8FA090]">
+            {{ game.date }}{% if game.scheduled_time %} · {{ game.scheduled_time }}{% endif %}
+            {% if game.venue %} · {{ game.venue }}{% endif %}
+        </p>
+        <p class="mt-6 max-w-3xl text-sm leading-7 text-[#C9CFC3]">Set lineups first, then track game state and plate appearances as the game progresses.</p>
+
+        {% if session.has_started %}
+        <p class="mt-6 inline-flex rounded-full border border-[#E8B23D] bg-[#E8B23D]/10 px-4 py-2 font-scoreboard text-xs uppercase tracking-[0.2em] text-[#E8B23D]">
+            Lineups locked after start
+        </p>
+        {% else %}
+        <p class="mt-6 inline-flex rounded-full border border-[#3F5847] bg-[#1A2A21] px-4 py-2 font-scoreboard text-xs uppercase tracking-[0.2em] text-[#8FA090]">
+            Lineups editable until first plate appearance
+        </p>
+        {% endif %}
+    </div>
+
+    {% include 'game_entry/partials/lineup_editor.html' with game=game session=session away_form=away_form home_form=home_form %}
+    {% include 'game_entry/partials/workspace_live_sections.html' with game=game session=session lineup_ready=lineup_ready away_lineup=away_lineup home_lineup=home_lineup state_form=state_form away_substitution_form=away_substitution_form home_substitution_form=home_substitution_form plate_appearances=plate_appearances %}
+</section>
+{% endblock %}
