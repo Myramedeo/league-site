@@ -1,0 +1,11 @@
+<div id="{{ panel_id }}" class="rounded-2xl border border-[#3F5847] bg-[#1A2A21] p-4" hx-swap-oob="outerHTML">
+    <h2 class="font-display text-2xl uppercase tracking-wide text-[#F2F0E6]">{{ team_name }} batting order</h2>
+    <ol class="mt-4 space-y-2 text-sm text-[#C9CFC3]">
+        {% for spot in lineup.batting_order %}
+        <li class="flex items-center justify-between rounded-md border border-[#33493B] px-3 py-2 {% if forloop.counter0 == lineup.batting_index %}bg-[#E8B23D]/10 text-[#F2F0E6]{% endif %}">
+            <span>{{ spot.batting_order }}. {{ spot.player }}</span>
+            {% if forloop.counter0 == lineup.batting_index %}<span class="font-scoreboard text-xs uppercase tracking-[0.2em] text-[#E8B23D]">Up</span>{% endif %}
+        </li>
+        {% endfor %}
+    </ol>
+</div>

@@ -1,0 +1,61 @@
+<div id="game-state-card" class="rounded-2xl border border-[#3F5847] bg-[#1A2A21] p-4">
+    <h2 class="font-display text-2xl uppercase tracking-wide text-[#F2F0E6]">Game state</h2>
+    <p class="mt-2 text-sm text-[#8FA090]">Track inning context before recording each plate appearance.</p>
+
+    <form
+        method="post"
+        action="{% url 'game_entry:game_workspace' game.id %}"
+        hx-post="{% url 'game_entry:game_state_fragment' game.id %}"
+        hx-target="#game-state-card"
+        hx-swap="outerHTML"
+        hx-disabled-elt="find button[type='submit']"
+        class="mt-4 space-y-4"
+        x-data="{submitting: false}"
+        x-on:htmx:before-request="submitting = true"
+        x-on:htmx:after-request="submitting = false"
+    >
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update_game_state">
+
+        <div class="grid gap-3 sm:grid-cols-3">
+            <div>
+                <label class="mb-1 block text-xs uppercase tracking-[0.15em] text-[#8FA090]" for="{{ state_form.current_inning.id_for_label }}">Inning</label>
+                {{ state_form.current_inning }}
+                {% if state_form.current_inning.errors %}<p class="mt-1 text-sm text-red-300">{{ state_form.current_inning.errors|join:', ' }}</p>{% endif %}
+            </div>
+            <div>
+                <label class="mb-1 block text-xs uppercase tracking-[0.15em] text-[#8FA090]" for="{{ state_form.half_inning.id_for_label }}">Half</label>
+                {{ state_form.half_inning }}
+                {% if state_form.half_inning.errors %}<p class="mt-1 text-sm text-red-300">{{ state_form.half_inning.errors|join:', ' }}</p>{% endif %}
+            </div>
+            <div>
+                <label class="mb-1 block text-xs uppercase tracking-[0.15em] text-[#8FA090]" for="{{ state_form.outs.id_for_label }}">Outs</label>
+                {{ state_form.outs }}
+                {% if state_form.outs.errors %}<p class="mt-1 text-sm text-red-300">{{ state_form.outs.errors|join:', ' }}</p>{% endif %}
+            </div>
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-3">
+            <div>
+                <label class="mb-1 block text-xs uppercase tracking-[0.15em] text-[#8FA090]" for="{{ state_form.first_base_runner.id_for_label }}">1B runner</label>
+                {{ state_form.first_base_runner }}
+                {% if state_form.first_base_runner.errors %}<p class="mt-1 text-sm text-red-300">{{ state_form.first_base_runner.errors|join:', ' }}</p>{% endif %}
+            </div>
+            <div>
+                <label class="mb-1 block text-xs uppercase tracking-[0.15em] text-[#8FA090]" for="{{ state_form.second_base_runner.id_for_label }}">2B runner</label>
+                {{ state_form.second_base_runner }}
+                {% if state_form.second_base_runner.errors %}<p class="mt-1 text-sm text-red-300">{{ state_form.second_base_runner.errors|join:', ' }}</p>{% endif %}
+            </div>
+            <div>
+                <label class="mb-1 block text-xs uppercase tracking-[0.15em] text-[#8FA090]" for="{{ state_form.third_base_runner.id_for_label }}">3B runner</label>
+                {{ state_form.third_base_runner }}
+                {% if state_form.third_base_runner.errors %}<p class="mt-1 text-sm text-red-300">{{ state_form.third_base_runner.errors|join:', ' }}</p>{% endif %}
+            </div>
+        </div>
+
+        <button type="submit" class="rounded-full border border-[#E8B23D] px-5 py-2 font-scoreboard text-xs uppercase tracking-[0.2em] text-[#E8B23D] transition-colors hover:bg-[#E8B23D]/10" x-bind:disabled="submitting">
+            <span x-show="!submitting">Update state</span>
+            <span x-show="submitting" x-cloak>Saving...</span>
+        </button>
+    </form>
+</div>

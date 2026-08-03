@@ -305,3 +305,139 @@ class LineupStateAndSubstitutionTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'already in the lineup')
+
+    def test_htmx_game_state_update_returns_fragment_without_redirect(self):
+        self.client.force_login(self.staff_user)
+        fragment_url = reverse('game_entry:game_state_fragment', args=[self.game.id])
+
+        response = self.client.post(
+            fragment_url,
+            {
+                'state-current_inning': '3',
+                'state-half_inning': 'BOT',
+                'state-outs': '2',
+                'state-first_base_runner': str(self.home_players[0].id),
+                'state-second_base_runner': '',
+                'state-third_base_runner': '',
+            },
+            HTTP_HX_REQUEST='true',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="game-state-card"')
+        self.assertContains(response, 'Game state updated.')
+
+        session = ScoringSession.objects.get(game=self.game)
+        self.assertEqual(session.current_inning, 3)
+        self.assertEqual(session.half_inning, 'BOT')
+        self.assertEqual(session.outs, 2)
+        self.assertEqual(session.first_base_runner, self.home_players[0])
+
+    def test_htmx_plate_appearance_returns_fragment_and_rotates_batter(self):
+        self.client.force_login(self.staff_user)
+        self.client.post(self.workspace_url, self._lineup_post_data())
+
+        session = ScoringSession.objects.get(game=self.game)
+        away_lineup = TeamLineup.objects.get(session=session, team=self.owls)
+        away_lineup.batting_index = 1
+        away_lineup.save(update_fields=['batting_index'])
+        session.started_at = session.created_at
+        session.lineups_locked = True
+        session.save(update_fields=['started_at', 'lineups_locked', 'updated_at'])
+
+        fragment_url = reverse('game_entry:plate_appearance_fragment', args=[self.game.id])
+        response = self.client.post(
+            fragment_url,
+            {
+                'offense_team': 'away',
+                'result': '1B',
+                'notes': 'HTMX single',
+            },
+            HTTP_HX_REQUEST='true',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="plate-appearance-card"')
+        self.assertContains(response, 'id="recent-plate-appearances-list"')
+        self.assertContains(response, 'Recorded 1B for')
+
+        away_lineup.refresh_from_db()
+        self.assertEqual(away_lineup.batting_index, 2)
+        self.assertTrue(
+            PlateAppearance.objects.filter(
+                session=session,
+                lineup=away_lineup,
+                result='1B',
+                notes='HTMX single',
+            ).exists()
+        )
+
+    def test_htmx_lineup_save_returns_fragments_and_creates_lineups(self):
+        self.client.force_login(self.staff_user)
+        fragment_url = reverse('game_entry:lineups_fragment', args=[self.game.id])
+
+        response = self.client.post(
+            fragment_url,
+            self._lineup_post_data(),
+            HTTP_HX_REQUEST='true',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="lineup-editor"')
+        self.assertContains(response, 'id="workspace-live-sections"')
+        self.assertContains(response, 'Lineups saved. You can start scoring now.')
+
+        session = ScoringSession.objects.get(game=self.game)
+        self.assertTrue(TeamLineup.objects.filter(session=session, team=self.owls).exists())
+        self.assertTrue(TeamLineup.objects.filter(session=session, team=self.hawks).exists())
+
+    def test_htmx_substitution_returns_fragment_and_updates_batting_order(self):
+        self.client.force_login(self.staff_user)
+        self._start_scoring()
+
+        session = ScoringSession.objects.get(game=self.game)
+        away_lineup = TeamLineup.objects.get(session=session, team=self.owls)
+        old_player = away_lineup.spots.get(batting_order=2).player
+        fragment_url = reverse('game_entry:substitution_fragment', args=[self.game.id, 'away'])
+
+        response = self.client.post(
+            fragment_url,
+            {
+                'away_sub-batting_order': '2',
+                'away_sub-incoming_player': str(self.away_players[3].id),
+                'away_sub-notes': 'HTMX pinch hitter',
+            },
+            HTTP_HX_REQUEST='true',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="substitution-section"')
+        self.assertContains(response, 'Substitution saved:')
+
+        away_lineup.refresh_from_db()
+        new_player = away_lineup.spots.get(batting_order=2).player
+        self.assertEqual(new_player, self.away_players[3])
+        self.assertNotEqual(old_player, new_player)
+
+    def test_htmx_substitution_validation_error_returns_fragment(self):
+        self.client.force_login(self.staff_user)
+        self._start_scoring()
+
+        session = ScoringSession.objects.get(game=self.game)
+        away_lineup = TeamLineup.objects.get(session=session, team=self.owls)
+        current_player = away_lineup.spots.get(batting_order=2).player
+        fragment_url = reverse('game_entry:substitution_fragment', args=[self.game.id, 'away'])
+
+        response = self.client.post(
+            fragment_url,
+            {
+                'away_sub-batting_order': '2',
+                'away_sub-incoming_player': str(current_player.id),
+                'away_sub-notes': 'invalid same player',
+            },
+            HTTP_HX_REQUEST='true',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="substitution-section"')
+        self.assertContains(response, 'Choose a different player for substitution.')

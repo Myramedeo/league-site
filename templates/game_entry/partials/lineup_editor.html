@@ -1,0 +1,74 @@
+<div id="lineup-editor">
+    {% if not session.has_started %}
+    <form
+        method="post"
+        action="{% url 'game_entry:game_workspace' game.id %}"
+        hx-post="{% url 'game_entry:lineups_fragment' game.id %}"
+        hx-target="#lineup-editor"
+        hx-swap="outerHTML"
+        hx-disabled-elt="find button[type='submit']"
+        class="grid gap-6 rounded-3xl border border-[#33493B] bg-[#132119] p-6 lg:grid-cols-2"
+        x-data="{submitting: false}"
+        x-on:htmx:before-request="submitting = true"
+        x-on:htmx:after-request="submitting = false"
+    >
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_lineups">
+
+        <div class="rounded-2xl border border-[#3F5847] bg-[#1A2A21] p-4">
+            <h2 class="font-display text-2xl uppercase tracking-wide text-[#F2F0E6]">{{ game.away_team }} lineup</h2>
+            <div class="mt-4">
+                <label class="mb-2 block font-scoreboard text-xs uppercase tracking-[0.2em] text-[#8FA090]" for="{{ away_form.lineup_size.id_for_label }}">Lineup size</label>
+                {{ away_form.lineup_size }}
+                {% if away_form.lineup_size.errors %}
+                <p class="mt-2 text-sm text-red-300">{{ away_form.lineup_size.errors|join:', ' }}</p>
+                {% endif %}
+            </div>
+            <div class="mt-4 grid gap-3">
+                {% for field in away_form %}
+                {% if field.name != 'lineup_size' %}
+                <div>
+                    <label class="mb-1 block text-xs uppercase tracking-[0.15em] text-[#8FA090]" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                    <p class="mt-1 text-sm text-red-300">{{ field.errors|join:', ' }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="rounded-2xl border border-[#3F5847] bg-[#1A2A21] p-4">
+            <h2 class="font-display text-2xl uppercase tracking-wide text-[#F2F0E6]">{{ game.home_team }} lineup</h2>
+            <div class="mt-4">
+                <label class="mb-2 block font-scoreboard text-xs uppercase tracking-[0.2em] text-[#8FA090]" for="{{ home_form.lineup_size.id_for_label }}">Lineup size</label>
+                {{ home_form.lineup_size }}
+                {% if home_form.lineup_size.errors %}
+                <p class="mt-2 text-sm text-red-300">{{ home_form.lineup_size.errors|join:', ' }}</p>
+                {% endif %}
+            </div>
+            <div class="mt-4 grid gap-3">
+                {% for field in home_form %}
+                {% if field.name != 'lineup_size' %}
+                <div>
+                    <label class="mb-1 block text-xs uppercase tracking-[0.15em] text-[#8FA090]" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                    <p class="mt-1 text-sm text-red-300">{{ field.errors|join:', ' }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="lg:col-span-2">
+            <button type="submit" class="rounded-full bg-[#E8B23D] px-6 py-3 font-scoreboard text-xs uppercase tracking-[0.2em] text-[#16241B] transition-colors hover:bg-[#F2C463]" x-bind:disabled="submitting">
+                <span x-show="!submitting">Save lineups</span>
+                <span x-show="submitting" x-cloak>Saving...</span>
+            </button>
+        </div>
+    </form>
+    {% endif %}
+</div>
