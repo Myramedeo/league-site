@@ -42,11 +42,6 @@
             </select>
         </div>
 
-        <div>
-            <label class="mb-2 block font-scoreboard text-xs uppercase tracking-[0.2em] text-[#8FA090]" for="notes">Notes</label>
-            <input name="notes" id="notes" type="text" maxlength="255" value="{{ notes }}" placeholder="Optional scorer note" class="w-full rounded-md border border-[#3F5847] bg-[#132119] px-3 py-2 text-sm text-[#F2F0E6] placeholder:text-[#6F7D72] focus:border-[#E8B23D] focus:outline-none">
-        </div>
-
         <button type="submit" class="rounded-full bg-[#E8B23D] px-5 py-2 font-scoreboard text-xs uppercase tracking-[0.2em] text-[#16241B] transition-colors hover:bg-[#F2C463]" x-bind:disabled="submitting">
             <span x-show="!submitting">Save result &amp; rotate</span>
             <span x-show="submitting" x-cloak>Saving...</span>

@@ -4,27 +4,12 @@
 
 {% block content %}
 <section class="space-y-8">
-    <div class="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
-        <div class="rounded-3xl border border-[#33493B] bg-[#132119] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
-            <p class="font-scoreboard text-xs uppercase tracking-[0.2em] text-[#8FA090]">Staff Only</p>
-            <h1 class="font-display mt-4 text-4xl uppercase tracking-wide text-[#F2F0E6]">Select a Game</h1>
-            <p class="mt-4 max-w-2xl text-sm leading-7 text-[#C9CFC3]">
-                Pick a scheduled matchup to open its scoring workspace. This is the entry point for live scorekeeping,
-                substitutions, and play-by-play updates.
-            </p>
-            {% if season %}
-            <p class="mt-6 font-scoreboard text-xs uppercase tracking-[0.25em] text-[#E8B23D]">Current season: {{ season }}</p>
-            {% endif %}
-        </div>
-
-        <aside class="rounded-3xl border border-[#3F5847] bg-[#1A2A21] p-6">
-            <h2 class="font-scoreboard text-xs uppercase tracking-[0.2em] text-[#E8B23D]">What Opens Next</h2>
-            <ul class="mt-4 space-y-3 text-sm text-[#C9CFC3]">
-                <li>Game context and lineup setup.</li>
-                <li>Play-by-play event capture.</li>
-                <li>Live linescore and finalization tools.</li>
-            </ul>
-        </aside>
+    <div class="rounded-3xl border border-[#33493B] bg-[#132119] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
+        <p class="font-scoreboard text-xs uppercase tracking-[0.2em] text-[#8FA090]">Staff Only</p>
+        <h1 class="font-display mt-4 text-4xl uppercase tracking-wide text-[#F2F0E6]">Select a Game</h1>
+        {% if season %}
+        <p class="mt-6 font-scoreboard text-xs uppercase tracking-[0.25em] text-[#E8B23D]">Current season: {{ season }}</p>
+        {% endif %}
     </div>
 
     <div class="overflow-hidden rounded-3xl border border-[#33493B] bg-[#132119]">
