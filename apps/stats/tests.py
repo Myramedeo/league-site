@@ -14,7 +14,7 @@ class StandingsTests(TestCase):
             season=self.season, home_team=self.team_a,
             away_team=self.team_b, date="2026-06-01"
         )
-        GameResult.objects.create(game=game, home_score=5, away_score=2)
+        GameResult.objects.create(game=game, final_home_score=5, final_away_score=2)
 
         standings = compute_standings(self.season)
         hawks = next(s for s in standings if s.team == self.team_a)
@@ -30,7 +30,7 @@ class StandingsTests(TestCase):
             season=self.season, home_team=self.team_a,
             away_team=self.team_b, date="2026-06-02"
         )
-        GameResult.objects.create(game=game, home_score=3, away_score=3)
+        GameResult.objects.create(game=game, final_home_score=3, final_away_score=3)
 
         standings = compute_standings(self.season)
         hawks = next(s for s in standings if s.team == self.team_a)
@@ -49,19 +49,19 @@ class StandingsTests(TestCase):
             season=self.season, home_team=self.team_a,
             away_team=self.team_b, date="2026-06-01"
         )
-        GameResult.objects.create(game=game1, home_score=5, away_score=2)
+        GameResult.objects.create(game=game1, final_home_score=5, final_away_score=2)
 
         game2 = Game.objects.create(
             season=self.season, home_team=self.team_b,
             away_team=self.team_a, date="2026-06-02"
         )
-        GameResult.objects.create(game=game2, home_score=3, away_score=4)
+        GameResult.objects.create(game=game2, final_home_score=3, final_away_score=4)
 
         game3 = Game.objects.create(
             season=self.season, home_team=self.team_a,
             away_team=self.team_b, date="2026-06-03"
         )
-        GameResult.objects.create(game=game3, home_score=2, away_score=5)
+        GameResult.objects.create(game=game3, final_home_score=2, final_away_score=5)
 
         standings = compute_standings(self.season)
         hawks = next(s for s in standings if s.team == self.team_a)
