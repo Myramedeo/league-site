@@ -1,0 +1,12 @@
+<!-- Season switcher: submits ?season=<year> via GET to the current page -->
+{% if all_seasons %}
+<form method="get" class="inline-block">
+    <label for="season-select" class="sr-only">Season</label>
+    <select id="season-select" name="season" onchange="this.form.submit()"
+        class="rounded-md border border-[#33493B] bg-[#0F1D16] px-2 py-1 font-scoreboard text-xs uppercase tracking-wide text-[#F2F0E6]">
+        {% for s in all_seasons %}
+        <option value="{{ s.year }}" {% if season and s.year == season.year %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+    </select>
+</form>
+{% endif %}

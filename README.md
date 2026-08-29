@@ -124,3 +124,11 @@ The repository includes Docker support and a Procfile for deployment to platform
 - Model changes should be followed by migrations with python manage.py makemigrations and python manage.py migrate.
 - UI changes in the Tailwind theme may require a fresh build with python manage.py tailwind build.
 - The game-entry workflow is staff-oriented and relies on Django authentication and admin access.
+
+## Roadmap
+
+- [ ] Rework visuals to be more similar to League Lineup's
+- [ ] Import previous dataset
+- [ ] Image storage
+- [ ] Rework entry / scoring flow
+- [ ] Improve player viewing

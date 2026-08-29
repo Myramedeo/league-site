@@ -4,6 +4,7 @@ from games.services import compute_standings
 from stats.services import batting_leaderboard
 from games.models import Game
 from announcements.models import Announcement
+from .utils import get_selected_season
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -26,37 +27,44 @@ def standings_api(request):
     return Response(serializer.data)
 
 def schedule(request):
-    season = Season.objects.order_by('-year').first()
+    season = get_selected_season(request)
     games = (
         Game.objects.filter(season=season)
         .select_related('home_team', 'away_team', 'result')
         .order_by('date')
     ) if season else []
-    return render(request, 'core/schedule.html', {'season': season, 'games': games})
+    return render(request, 'core/schedule.html', {
+        'season': season,
+        'games': games,
+        'all_seasons': Season.objects.order_by('-year'),
+    })
 
 @cache_page(60 * 15)
 def leaderboards(request):
-    season = Season.objects.order_by('-year').first()
+    season = get_selected_season(request)
     return render(request, 'core/leaderboards.html', {
         'season': season,
         'batting_leaders': batting_leaderboard(season, min_at_bats=5) if season else [],
+        'all_seasons': Season.objects.order_by('-year'),
     })
 
 def home(request):
-    season = Season.objects.order_by('-year').first()
+    season = get_selected_season(request)
     standings_list = compute_standings(season) if season else []
     announcements = Announcement.objects.filter(active=True)
     return render(request, 'core/home.html', {
         'season': season,
         'standings': standings_list,
         'announcements': announcements,
+        'all_seasons': Season.objects.order_by('-year'),
     })
 
 @cache_page(60 * 15)  # 15 minutes
 def standings(request):
-    season = Season.objects.order_by('-year').first()
+    season = get_selected_season(request)
     standings_list = compute_standings(season) if season else []
     return render(request, 'core/standings.html', {
         'season': season,
         'standings': standings_list,
+        'all_seasons': Season.objects.order_by('-year'),
     })

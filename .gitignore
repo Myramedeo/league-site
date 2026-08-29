@@ -185,3 +185,4 @@ cython_debug/
 
 # Windows
 staticfiles/
+old_data/

@@ -1,5 +1,5 @@
 from django.db import models
-from teams.models import Team, Season
+from teams.models import Competition, Team, Season
 
 class Game(models.Model):
     STATUS_CHOICES = [
@@ -15,12 +15,21 @@ class Game(models.Model):
     ]
 
     season = models.ForeignKey(Season, on_delete=models.CASCADE, related_name='games')
+    competition = models.ForeignKey(
+        Competition,
+        on_delete=models.PROTECT,
+        related_name='games',
+        null=True,
+        blank=True,
+    )
     home_team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='home_games')
     away_team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='away_games')
     date = models.DateField()
     scheduled_time = models.TimeField(blank=True, null=True)
     status = models.CharField(max_length=3, choices=STATUS_CHOICES, default='TBP')
     venue = models.CharField(max_length=255, blank=True, null=True)
+    legacy_game_id = models.PositiveBigIntegerField(unique=True, null=True, blank=True)
+    exclude_from_standings = models.BooleanField(default=False)
 
     def __str__(self):
         if self.scheduled_time:
@@ -43,6 +52,10 @@ class GameResult(models.Model):
         related_name="result"
     )
 
+    final_home_score = models.PositiveSmallIntegerField(null=True, blank=True)
+    final_away_score = models.PositiveSmallIntegerField(null=True, blank=True)
+    innings_played = models.PositiveSmallIntegerField(null=True, blank=True)
+
     home_hits = models.PositiveSmallIntegerField(default=0, blank=True, null=True)
     away_hits = models.PositiveSmallIntegerField(default=0, blank=True, null=True)
     home_errors = models.PositiveSmallIntegerField(default=0, blank=True, null=True)
@@ -58,10 +71,14 @@ class GameResult(models.Model):
 
     @property
     def home_score(self):
+        if self.final_home_score is not None:
+            return self.final_home_score
         return sum(self.home_runs)
 
     @property
     def away_score(self):
+        if self.final_away_score is not None:
+            return self.final_away_score
         return sum(self.away_runs)
 
     def __str__(self):
@@ -97,3 +114,11 @@ class InningScore(models.Model):
         if not self.inning:
             self.inning = self.result.innings.count() + 1
         super().save(*args, **kwargs)
+
+
+class LegacyGameIdentity(models.Model):
+    legacy_game_id = models.PositiveBigIntegerField(unique=True)
+    game = models.OneToOneField(Game, on_delete=models.CASCADE, related_name='legacy_identity')
+
+    def __str__(self):
+        return str(self.legacy_game_id)

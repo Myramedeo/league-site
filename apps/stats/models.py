@@ -12,6 +12,14 @@ class BattingStatLine(models.Model):
     rbis = models.PositiveSmallIntegerField(default=0)
     walks = models.PositiveSmallIntegerField(default=0)
     strikeouts = models.PositiveSmallIntegerField(default=0)
+    singles = models.PositiveSmallIntegerField(default=0)
+    doubles = models.PositiveSmallIntegerField(default=0)
+    triples = models.PositiveSmallIntegerField(default=0)
+    home_runs = models.PositiveSmallIntegerField(default=0)
+    hit_by_pitch = models.PositiveSmallIntegerField(default=0)
+    stolen_bases = models.PositiveSmallIntegerField(default=0)
+    sacrifices = models.PositiveSmallIntegerField(default=0)
+    reached_on_error = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
         unique_together = ('player', 'game')
@@ -20,6 +28,13 @@ class BattingStatLine(models.Model):
         from django.core.exceptions import ValidationError
         if self.hits > self.at_bats:
             raise ValidationError("Hits cannot exceed at-bats.")
+        component_hits = self.singles + self.doubles + self.triples + self.home_runs
+        if component_hits != self.hits:
+            raise ValidationError("Hit type totals must equal hits.")
+
+    @property
+    def calculated_hits(self):
+        return self.singles + self.doubles + self.triples + self.home_runs
 
     @property
     def batting_average(self):
