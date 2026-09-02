@@ -34,9 +34,17 @@ def schedule(request):
         .select_related('home_team', 'away_team', 'result')
         .order_by('date')
     ) if season else []
+    completed_statuses = ('F', 'W', 'L', 'T', 'FFT', 'PPD')
+    upcoming_games = [g for g in games if g.status not in completed_statuses]
+    completed_games = sorted(
+        (g for g in games if g.status in completed_statuses),
+        key=lambda g: g.date,
+        reverse=True,
+    )
     return render(request, 'core/schedule.html', {
         'season': season,
-        'games': games,
+        'upcoming_games': upcoming_games,
+        'completed_games': completed_games,
         'all_seasons': Season.objects.order_by('-year'),
     })
 
