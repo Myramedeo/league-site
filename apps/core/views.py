@@ -1,9 +1,10 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from teams.models import Season
 from games.services import compute_standings
 from stats.services import batting_leaderboard
 from games.models import Game
 from announcements.models import Announcement
+from .models import Article
 from .utils import get_selected_season
 
 from rest_framework.decorators import api_view
@@ -57,6 +58,18 @@ def home(request):
         'standings': standings_list,
         'announcements': announcements,
         'all_seasons': Season.objects.order_by('-year'),
+    })
+
+def article_list(request):
+    articles = Article.objects.all()
+    return render(request, 'core/article_list.html', {
+        'articles': articles,
+    })
+
+def article_detail(request, slug):
+    article = get_object_or_404(Article, slug=slug)
+    return render(request, 'core/article.html', {
+        'article': article,
     })
 
 @cache_page(60 * 15)  # 15 minutes

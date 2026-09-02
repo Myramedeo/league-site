@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 from django.conf import settings
-from apps.core import views as core_views
+from core import views as core_views
 
 from rest_framework.routers import DefaultRouter
 from teams.views import TeamViewSet, SeasonViewSet
@@ -46,6 +46,8 @@ urlpatterns = [
     path('standings/', core_views.standings, name='standings'),
     path('stats/', core_views.leaderboards, name='leaderboards'),
     path('schedule/', core_views.schedule, name='schedule'),
+    path('articles/', core_views.article_list, name='article_list'),
+    path('articles/<slug:slug>/', core_views.article_detail, name='article_detail'),
     path('', core_views.home, name='home'),
     path('api/', include(router.urls)),
     path('api/standings/', standings_api, name='standings_api'),
