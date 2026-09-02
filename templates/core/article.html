@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ article.title }} | League Site{% endblock %}
+
+{% block content %}
+<section class="border-y border-[#525252] py-12">
+    <p class="font-scoreboard text-xs uppercase tracking-[0.15em] text-[#E8B23D]">Articles</p>
+    <h1 class="font-display mt-3 text-4xl font-semibold uppercase tracking-wide text-[#F2F0E6]">{{ article.title }}</h1>
+    {% if article.published_at %}
+    <p class="mt-2 text-sm text-[#A3A3A3]">Last updated {{ article.published_at|date:"F j, Y" }}</p>
+    {% endif %}
+    <div class="prose prose-invert mt-6 max-w-2xl text-[#D4D4D4]">{{ article.content|safe }}</div>
+</section>
+{% endblock %}

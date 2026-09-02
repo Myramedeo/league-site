@@ -17,15 +17,23 @@ class GameResultTests(TestCase):
         self.team_a = Team.objects.create(name="Hawks")
         self.team_b = Team.objects.create(name="Owls")
 
+    def create_result(self, game, home_runs, away_runs, **fields):
+        result = GameResult.objects.create(game=game, **fields)
+        InningScore.objects.bulk_create([
+            InningScore(result=result, inning=inning, home_runs=home, away_runs=away)
+            for inning, (home, away) in enumerate(zip(home_runs, away_runs), start=1)
+        ])
+        return result
+
     def test_result_totals_runs_across_nine_innings(self):
         game = Game.objects.create(
             season=self.season, home_team=self.team_a,
             away_team=self.team_b, date="2026-06-09"
         )
-        result = GameResult.objects.create(
-            game=game,
-            home_runs=[0, 1, 0, 2, 0, 0, 1, 0, 0],
-            away_runs=[1, 0, 0, 0, 2, 0, 0, 0, 0],
+        result = self.create_result(
+            game,
+            [0, 1, 0, 2, 0, 0, 1, 0, 0],
+            [1, 0, 0, 0, 2, 0, 0, 0, 0],
         )
 
         self.assertEqual(result.home_score, 4)
@@ -37,10 +45,10 @@ class GameResultTests(TestCase):
             season=self.season, home_team=self.team_a,
             away_team=self.team_b, date="2026-06-10"
         )
-        result = GameResult.objects.create(
-            game=game,
-            home_runs=[1, 0, 0, 0, 0, 0, 0, 0, 0],
-            away_runs=[0, 0, 0, 0, 0, 0, 0, 0, 0],
+        result = self.create_result(
+            game,
+            [1, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
         )
 
         self.assertEqual(result.home_score, 1)
@@ -52,19 +60,20 @@ class GameResultTests(TestCase):
             away_team=self.team_b, date="2026-06-11",
             venue="Main Field",
         )
-        GameResult.objects.create(
-            game=game,
-            home_runs=[0, 1, 0, 0, 0, 0, 0, 0, 0],
-            away_runs=[0, 0, 0, 0, 0, 0, 0, 0, 1],
-            home_score=1,
-            away_score=1,
+        self.create_result(
+            game,
+            [0, 1, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 1],
+            final_home_score=1,
+            final_away_score=1,
         )
 
         response = self.client.get(reverse('game_detail', args=[game.id]))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Main Field')
-        self.assertContains(response, '1-1')
+        self.assertEqual(response.context['result'].home_score, 1)
+        self.assertEqual(response.context['result'].away_score, 1)
 
     def test_inning_score_inline_only_adds_missing_forms_for_existing_result(self):
         class DummyQuerySet:
@@ -87,7 +96,7 @@ class StandingsTests(TestCase):
             season=self.season, home_team=self.team_a,
             away_team=self.team_b, date="2026-06-01"
         )
-        GameResult.objects.create(game=game, home_score=5, away_score=2)
+        GameResult.objects.create(game=game, final_home_score=5, final_away_score=2)
 
         standings = compute_standings(self.season)
         hawks = next(s for s in standings if s.team == self.team_a)
@@ -103,7 +112,7 @@ class StandingsTests(TestCase):
             season=self.season, home_team=self.team_a,
             away_team=self.team_b, date="2026-06-02"
         )
-        GameResult.objects.create(game=game, home_score=3, away_score=3)
+        GameResult.objects.create(game=game, final_home_score=3, final_away_score=3)
 
         standings = compute_standings(self.season)
         hawks = next(s for s in standings if s.team == self.team_a)

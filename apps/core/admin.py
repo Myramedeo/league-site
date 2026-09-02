@@ -1,3 +1,12 @@
 from django.contrib import admin
+from .models import Article
 
-# Register your models here.
+
+@admin.register(Article)
+class ArticleAdmin(admin.ModelAdmin):
+    list_display = ('title', 'slug', 'published_at', 'legacy_article_id')
+    list_filter = ('published_at',)
+    search_fields = ('title', 'content')
+    prepopulated_fields = {'slug': ('title',)}
+    readonly_fields = ('legacy_article_id', 'created_at', 'updated_at')
+    ordering = ('-published_at',)

@@ -18,9 +18,9 @@
         .font-scoreboard { font-family: 'IBM Plex Mono', monospace; }
     </style>
 </head>
-<body class="min-h-screen bg-gradient-to-b from-[#0F1D16] to-[#182E22] text-[#F2F0E6]">
+<body class="min-h-screen bg-gradient-to-b from-[#171717] to-[#262626] text-[#F2F0E6]">
 
-    <nav class="sticky top-0 z-10 border-b border-[#33493B] bg-[#0F1D16]/95 backdrop-blur">
+    <nav class="sticky top-0 z-10 border-b border-[#525252] bg-[#171717]/95 backdrop-blur">
         <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-y-3 px-6 py-4">
             <a href="{% url 'home' %}" class="font-display flex items-center gap-2 text-lg font-semibold uppercase tracking-wide text-[#F2F0E6] hover:text-[#E8B23D] transition-colors">
                 <span aria-hidden="true">⚾</span>
@@ -32,6 +32,7 @@
                 <a href="{% url 'leaderboards' %}" class="text-[#C9CFC3] hover:text-[#E8B23D] transition-colors">Stats</a>
                 <a href="{% url 'schedule' %}" class="text-[#C9CFC3] hover:text-[#E8B23D] transition-colors">Schedule</a>
                 <a href="{% url 'photo_list' %}" class="text-[#C9CFC3] hover:text-[#E8B23D] transition-colors">Photos</a>
+                <a href="{% url 'article_list' %}" class="text-[#D4D4D4] hover:text-[#E8B23D] transition-colors">Articles</a>
                 {% if request.user.is_staff %}
                 <a href="{% url 'game_entry:portal' %}" class="text-[#E8B23D] hover:text-[#F2C463] transition-colors">Scoring</a>
                 {% else %}
@@ -46,7 +47,7 @@
         {% if messages %}
         <div class="mb-6 space-y-3">
             {% for message in messages %}
-            <div class="rounded-lg border border-[#3F5847] bg-[#223328] px-4 py-3 text-sm text-[#F2F0E6]">
+            <div class="rounded-lg border border-[#737373] bg-[#404040] px-4 py-3 text-sm text-[#F2F0E6]">
                 {{ message }}
             </div>
             {% endfor %}
@@ -55,17 +56,17 @@
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="mt-16 border-t border-[#33493B] py-6">
+    <footer class="mt-16 border-t border-[#525252] py-6">
         <div class="mx-auto flex max-w-6xl flex-col gap-5 px-6 md:flex-row md:items-end md:justify-between">
             <div>
-                <p class="font-scoreboard text-xs uppercase tracking-[0.15em] text-[#5E6E60]">
+                <p class="font-scoreboard text-xs uppercase tracking-[0.15em] text-[#A3A3A3]">
                     HOBO 55+ Division &middot; Box scores updated after every game
                 </p>
             </div>
             <form action="{% url 'newsletter_signup' %}" method="post" class="w-full max-w-md md:w-auto">
                 {% csrf_token %}
                 <input type="hidden" name="next" value="{{ request.path }}">
-                <label for="newsletter-email" class="mb-2 block font-scoreboard text-[10px] uppercase tracking-[0.2em] text-[#8FA090]">
+                <label for="newsletter-email" class="mb-2 block font-scoreboard text-[10px] uppercase tracking-[0.2em] text-[#B3B3B3]">
                     Newsletter updates
                 </label>
                 <div class="flex gap-2">
@@ -75,7 +76,7 @@
                         type="email"
                         required
                         placeholder="you@example.com"
-                        class="w-full rounded-md border border-[#3F5847] bg-[#1B2A22] px-3 py-2 text-sm text-[#F2F0E6] placeholder:text-[#6F7D72] focus:border-[#E8B23D] focus:outline-none"
+                        class="w-full rounded-md border border-[#737373] bg-[#262626] px-3 py-2 text-sm text-[#F2F0E6] placeholder:text-[#A3A3A3] focus:border-[#E8B23D] focus:outline-none"
                     >
                     <button
                         type="submit"
