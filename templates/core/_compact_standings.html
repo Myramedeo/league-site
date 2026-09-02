@@ -1,0 +1,10 @@
+<div class="space-y-1">
+    {% for standing in standings %}
+    <div class="flex items-center justify-between gap-3 border-b border-[#16241B]/10 px-1 py-2 last:border-b-0">
+        <span class="min-w-0 truncate font-medium">{{ standing.team }}</span>
+        <span class="font-scoreboard shrink-0 text-sm">{{ standing.wins }}-{{ standing.losses }}-{{ standing.ties }}</span>
+    </div>
+    {% empty %}
+    <p class="px-2 py-5 text-center text-sm text-[#16241B]/60">No standings yet.</p>
+    {% endfor %}
+</div>
