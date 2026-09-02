@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Articles | League Site{% endblock %}
+
+{% block content %}
+<section class="border-y border-[#525252] py-12">
+    <p class="font-scoreboard text-xs uppercase tracking-[0.15em] text-[#E8B23D]">Articles</p>
+    <h1 class="font-display mt-3 text-4xl font-semibold uppercase tracking-wide text-[#F2F0E6]">News &amp; Articles</h1>
+
+    <ul class="mt-8 max-w-2xl divide-y divide-[#525252]">
+        {% for article in articles %}
+        <li class="py-4">
+            <a href="{% url 'article_detail' article.slug %}" class="font-display text-lg text-[#F2F0E6] hover:text-[#E8B23D] transition-colors">{{ article.title }}</a>
+            {% if article.published_at %}
+            <p class="mt-1 text-sm text-[#A3A3A3]">{{ article.published_at|date:"F j, Y" }}</p>
+            {% endif %}
+        </li>
+        {% empty %}
+        <li class="py-4 text-[#D4D4D4]">No articles have been published yet.</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endblock %}

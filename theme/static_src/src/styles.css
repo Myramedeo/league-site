@@ -9,3 +9,67 @@
   * the scope of this path.
   */
 @source "../../../**/*.{html,py,js}";
+
+@layer utilities {
+  .from-\[\#0F1D16\] {
+    --tw-gradient-from: #171717;
+  }
+
+  .to-\[\#182E22\] {
+    --tw-gradient-to: #262626;
+  }
+
+  .bg-\[\#0F1D16\],
+  .bg-\[\#0F1D16\]\/95 {
+    background-color: #171717;
+  }
+
+  .bg-\[\#132119\] {
+    background-color: #202020;
+  }
+
+  .bg-\[\#1A2A21\],
+  .bg-\[\#1B2A22\] {
+    background-color: #262626;
+  }
+
+  .bg-\[\#223328\],
+  .bg-\[\#24372F\] {
+    background-color: #404040;
+  }
+
+  .bg-\[\#2B3A31\] {
+    background-color: #525252;
+  }
+
+  .bg-\[\#3F5847\]\/30 {
+    background-color: rgb(115 115 115 / 30%);
+  }
+
+  .border-\[\#0F1D16\] {
+    border-color: #171717;
+  }
+
+  .border-\[\#33493B\],
+  .divide-\[\#33493B\] {
+    border-color: #525252;
+  }
+
+  .border-\[\#3F5847\] {
+    border-color: #737373;
+  }
+
+  .text-\[\#5E6E60\],
+  .text-\[\#6F7D72\],
+  .text-\[\#7C8B7F\] {
+    color: #a3a3a3;
+  }
+
+  .text-\[\#8FA090\] {
+    color: #b3b3b3;
+  }
+
+  .text-\[\#C9CFC3\] {
+    color: #d4d4d4;
+  }
+}
