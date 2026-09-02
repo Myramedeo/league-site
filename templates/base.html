@@ -27,10 +27,11 @@
                 <span>Hamilton Oldtimers Baseball Organization 55+ Division</span>
             </a>
             <div class="flex flex-wrap items-center gap-x-6 gap-y-2 font-scoreboard text-xs uppercase tracking-[0.15em]">
-                <a href="{% url 'team_list' %}" class="text-[#D4D4D4] hover:text-[#E8B23D] transition-colors">Teams</a>
-                <a href="{% url 'standings' %}" class="text-[#D4D4D4] hover:text-[#E8B23D] transition-colors">Standings</a>
-                <a href="{% url 'leaderboards' %}" class="text-[#D4D4D4] hover:text-[#E8B23D] transition-colors">Stats</a>
-                <a href="{% url 'schedule' %}" class="text-[#D4D4D4] hover:text-[#E8B23D] transition-colors">Schedule</a>
+                <a href="{% url 'team_list' %}" class="text-[#C9CFC3] hover:text-[#E8B23D] transition-colors">Teams</a>
+                <a href="{% url 'standings' %}" class="text-[#C9CFC3] hover:text-[#E8B23D] transition-colors">Standings</a>
+                <a href="{% url 'leaderboards' %}" class="text-[#C9CFC3] hover:text-[#E8B23D] transition-colors">Stats</a>
+                <a href="{% url 'schedule' %}" class="text-[#C9CFC3] hover:text-[#E8B23D] transition-colors">Schedule</a>
+                <a href="{% url 'photo_list' %}" class="text-[#C9CFC3] hover:text-[#E8B23D] transition-colors">Photos</a>
                 <a href="{% url 'article_list' %}" class="text-[#D4D4D4] hover:text-[#E8B23D] transition-colors">Articles</a>
                 {% if request.user.is_staff %}
                 <a href="{% url 'game_entry:portal' %}" class="text-[#E8B23D] hover:text-[#F2C463] transition-colors">Scoring</a>

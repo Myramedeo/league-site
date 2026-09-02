@@ -43,6 +43,10 @@ CSRF_TRUSTED_ORIGINS = config(
     'CSRF_TRUSTED_ORIGINS', default='', cast=lambda v: [o.strip() for o in v.split(',') if o]
 )
 
+AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
+AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
+AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', default='')
+AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='')
 
 # Application definition
 
@@ -60,12 +64,14 @@ INSTALLED_APPS = [
     'games',
     'game_entry',
     'stats',
+    'photos',
     'core',
     'newsletter',
     'drf_spectacular',
     'tailwind',
     'theme',
     'nested_admin',
+    'storages',
 ]
 
 TAILWIND_APP_NAME = 'theme'
@@ -198,3 +204,19 @@ CACHES = {
 # Tailwind Configuration
 
 NPM_BIN_PATH = config('NPM_BIN_PATH', default='npm')
+
+
+# AWS S3 Configuration
+
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3.S3Storage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+AWS_S3_FILE_OVERWRITE = False
+AWS_DEFAULT_ACL = None
+AWS_QUERYSTRING_AUTH = False

@@ -42,6 +42,7 @@ urlpatterns = [
     path('newsletter/', include('newsletter.urls')),
     path('teams/', include('teams.urls')),
     path('players/', include('players.urls')),
+    path('photos/', include('photos.urls')),
     path('games/<int:game_id>/', game_detail, name='game_detail'),
     path('standings/', core_views.standings, name='standings'),
     path('stats/', core_views.leaderboards, name='leaderboards'),
