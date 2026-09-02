@@ -2,8 +2,12 @@
 {% block title %}Teams{% endblock %}
 {% block content %}
 
-<div class="mb-8">
-    <h1 class="font-display text-4xl font-bold uppercase tracking-tight text-[#F2F0E6] md:text-5xl">Teams</h1>
+<div class="mb-8 flex flex-wrap items-end justify-between gap-3">
+    <div>
+        <p class="font-scoreboard text-xs uppercase tracking-[0.3em] text-[#E8B23D]">{{ season }}</p>
+        <h1 class="font-display mt-2 text-4xl font-bold uppercase tracking-tight text-[#F2F0E6] md:text-5xl">Teams</h1>
+    </div>
+    {% include 'core/_season_switcher.html' %}
 </div>
 
 <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">

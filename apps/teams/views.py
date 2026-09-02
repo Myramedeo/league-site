@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404
+from core.utils import get_selected_season
 from .models import Team, Season
 
 from rest_framework import viewsets
@@ -13,8 +14,16 @@ class SeasonViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = SeasonSerializer
 
 def team_list(request):
-    teams = Team.objects.all().order_by('name')
-    return render(request, 'teams/team_list.html', {'teams': teams})
+    season = get_selected_season(request)
+    teams = (
+        Team.objects.filter(seasons=season).order_by('name').distinct()
+        if season else Team.objects.none()
+    )
+    return render(request, 'teams/team_list.html', {
+        'all_seasons': Season.objects.order_by('-year'),
+        'season': season,
+        'teams': teams,
+    })
 
 def team_detail(request, team_id):
     team = get_object_or_404(Team, id=team_id)
