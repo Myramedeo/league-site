@@ -31,6 +31,7 @@
                 <a href="{% url 'standings' %}" class="text-[#C9CFC3] hover:text-[#E8B23D] transition-colors">Standings</a>
                 <a href="{% url 'leaderboards' %}" class="text-[#C9CFC3] hover:text-[#E8B23D] transition-colors">Stats</a>
                 <a href="{% url 'schedule' %}" class="text-[#C9CFC3] hover:text-[#E8B23D] transition-colors">Schedule</a>
+                <a href="{% url 'photo_list' %}" class="text-[#C9CFC3] hover:text-[#E8B23D] transition-colors">Photos</a>
                 {% if request.user.is_staff %}
                 <a href="{% url 'game_entry:portal' %}" class="text-[#E8B23D] hover:text-[#F2C463] transition-colors">Scoring</a>
                 {% else %}

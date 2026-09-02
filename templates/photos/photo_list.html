@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Photos | Hamilton Oldtimers Baseball{% endblock %}
+
+{% block content %}
+<section>
+    <div class="mb-8 border-b border-[#33493B] pb-5">
+        <p class="font-scoreboard text-xs uppercase tracking-[0.15em] text-[#E8B23D]">League gallery</p>
+        <h1 class="mt-2 font-display text-4xl font-semibold uppercase text-[#F2F0E6]">Photos</h1>
+    </div>
+
+    {% if photos %}
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {% for photo in photos %}
+        <figure class="overflow-hidden rounded-lg border border-[#33493B] bg-[#1B2A22]">
+            <img src="{{ photo.image.url }}" alt="{{ photo.title }}" class="aspect-[4/3] w-full object-cover">
+            <figcaption class="p-4">
+                <h2 class="font-display text-xl uppercase text-[#F2F0E6]">{{ photo.title }}</h2>
+                {% if photo.caption %}
+                <p class="mt-2 text-sm leading-6 text-[#C9CFC3]">{{ photo.caption }}</p>
+                {% endif %}
+            </figcaption>
+        </figure>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-[#C9CFC3]">No photos have been added yet.</p>
+    {% endif %}
+</section>
+{% endblock %}
