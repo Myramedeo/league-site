@@ -22,6 +22,7 @@ def game_detail(request, game_id):
         Game.objects.select_related('season', 'home_team', 'away_team', 'result'),
         id=game_id,
     )
+    result = getattr(game, 'result', None)
 
     batting_lines = list(
         BattingStatLine.objects.filter(game=game).select_related('player').order_by('player__last_name', 'player__first_name')
@@ -45,8 +46,8 @@ def game_detail(request, game_id):
 
     home_batting_lines, away_batting_lines = split_lines(batting_lines)
 
-    home_runs = [int(run) for run in (game.result.home_runs if game.result else [])]
-    away_runs = [int(run) for run in (game.result.away_runs if game.result else [])]
+    home_runs = [int(run) for run in (result.home_runs if result else [])]
+    away_runs = [int(run) for run in (result.away_runs if result else [])]
 
     inning_rows = []
     for inning in range(1, 10):
@@ -56,7 +57,7 @@ def game_detail(request, game_id):
 
     return render(request, 'games/game_detail.html', {
         'game': game,
-        'result': game.result,
+        'result': result,
         'inning_rows': inning_rows,
         'home_batting_lines': home_batting_lines,
         'away_batting_lines': away_batting_lines,

@@ -8,6 +8,7 @@
     <p class="mt-3 text-sm uppercase tracking-[0.25em] text-[#8FA090]">{{ game.date }}{% if game.scheduled_time %} · {{ game.scheduled_time }}{% endif %}</p>
 </div>
 
+{% if result %}
 <div class="rounded-2xl border border-[#33493B] bg-[#1B2A22] p-4 md:p-6">
     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#33493B] pb-4">
         <div>
@@ -143,5 +144,15 @@
         {% endif %}
     </div>
 </div>
+
+{% else %}
+<div class="rounded-2xl border border-[#33493B] bg-[#1B2A22] p-4 md:p-6">
+    <p class="font-scoreboard text-xs uppercase tracking-[0.25em] text-[#E8B23D]">{{ game.get_status_display }}</p>
+    <p class="mt-2 text-[#C9CFC3]">This game has not been completed yet.</p>
+    {% if game.venue %}
+    <p class="mt-4 text-sm text-[#8FA090]">{{ game.venue }}</p>
+    {% endif %}
+</div>
+{% endif %}
 
 {% endblock %}

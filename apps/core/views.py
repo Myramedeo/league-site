@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from .serializers import TeamStandingSerializer
 
 from django.views.decorators.cache import cache_page
+from django.utils import timezone
 
 @api_view(['GET'])
 def standings_api(request):
@@ -61,10 +62,23 @@ def home(request):
     season = get_selected_season(request)
     standings_list = compute_standings(season) if season else []
     announcements = Announcement.objects.filter(active=True)
+    today = timezone.localdate()
+    games = Game.objects.filter(season=season).select_related(
+        'home_team', 'away_team', 'result'
+    ) if season else Game.objects.none()
+    upcoming_games = games.filter(date__gte=today, status='TBP').order_by(
+        'date', 'scheduled_time'
+    )[:3]
+    recent_games = games.filter(
+        date__lte=today,
+        status__in=('F', 'W', 'L', 'T', 'FFT'),
+    ).order_by('-date', '-scheduled_time')[:3]
     return render(request, 'core/home.html', {
         'season': season,
         'standings': standings_list,
         'announcements': announcements,
+        'upcoming_games': upcoming_games,
+        'recent_games': recent_games,
         'all_seasons': Season.objects.order_by('-year'),
     })
 

@@ -1,11 +1,13 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from datetime import date
 from unittest.mock import patch
 
 from announcements.models import Announcement
 from .models import Article
-from teams.models import Season
+from games.models import Game, GameResult
+from teams.models import Season, Team
 
 
 class HomePageTests(TestCase):
@@ -30,6 +32,55 @@ class HomePageTests(TestCase):
 
         self.assertContains(response, 'Admin Panel')
         self.assertContains(response, reverse('admin:index'))
+
+    @patch('core.views.timezone.localdate', return_value=date(2026, 6, 15))
+    def test_homepage_provides_date_aware_games(self, localdate):
+        season = Season.objects.create(year=2026)
+        hawks = Team.objects.create(name='Hawks')
+        bears = Team.objects.create(name='Bears')
+        lions = Team.objects.create(name='Lions')
+        upcoming_game = Game.objects.create(
+            season=season,
+            home_team=hawks,
+            away_team=bears,
+            date=date(2026, 6, 20),
+        )
+        old_upcoming_game = Game.objects.create(
+            season=season,
+            home_team=hawks,
+            away_team=lions,
+            date=date(2026, 6, 10),
+        )
+        recent_game = Game.objects.create(
+            season=season,
+            home_team=lions,
+            away_team=hawks,
+            date=date(2026, 6, 14),
+            status='F',
+        )
+        GameResult.objects.create(
+            game=recent_game,
+            final_home_score=4,
+            final_away_score=3,
+        )
+        Game.objects.create(
+            season=season,
+            home_team=bears,
+            away_team=lions,
+            date=date(2026, 6, 13),
+            status='PPD',
+        )
+
+        response = self.client.get(reverse('home'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(list(response.context['upcoming_games']), [upcoming_game])
+        self.assertEqual(list(response.context['recent_games']), [recent_game])
+        self.assertNotIn(old_upcoming_game, response.context['upcoming_games'])
+        self.assertContains(response, 'Upcoming')
+        self.assertContains(response, 'Recent Results')
+        self.assertContains(response, 'Bears')
+        self.assertContains(response, '3-4')
 
     @patch('core.views.compute_standings')
     def test_homepage_renders_announcements_and_compact_standings(self, compute_standings):

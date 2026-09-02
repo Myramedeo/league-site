@@ -75,6 +75,24 @@ class GameResultTests(TestCase):
         self.assertEqual(response.context['result'].home_score, 1)
         self.assertEqual(response.context['result'].away_score, 1)
 
+    def test_game_detail_page_renders_scheduled_game_without_result(self):
+        game = Game.objects.create(
+            season=self.season,
+            home_team=self.team_a,
+            away_team=self.team_b,
+            date='2026-06-12',
+            scheduled_time=time(18, 30),
+        )
+
+        response = self.client.get(reverse('game_detail', args=[game.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.context['result'])
+        self.assertContains(response, 'Hawks')
+        self.assertContains(response, 'Owls')
+        self.assertContains(response, 'To be played')
+        self.assertContains(response, 'This game has not been completed yet.')
+
     def test_inning_score_inline_only_adds_missing_forms_for_existing_result(self):
         class DummyQuerySet:
             def count(self):
