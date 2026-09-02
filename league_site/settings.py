@@ -43,6 +43,11 @@ CSRF_TRUSTED_ORIGINS = config(
     'CSRF_TRUSTED_ORIGINS', default='', cast=lambda v: [o.strip() for o in v.split(',') if o]
 )
 
+# Railway (and similar PaaS) terminate TLS at the edge and proxy to the app over
+# plain HTTP, setting X-Forwarded-Proto. Without this, Django thinks every
+# request is insecure, which breaks CSRF/Origin checks and secure cookies.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
 AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
 AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', default='')
