@@ -18,6 +18,9 @@ from . import services
 from .forms import BattingSlotForm, ScorecardEntryForm
 from .models import BattingSlot, GameScorecard, ScorecardEntry
 
+# Batting order rows shown by default, before any "+ Add batter" extra-hitter rows.
+DEFAULT_LINEUP_ROWS = 9
+
 
 def staff_sign_in(request):
 	next_url = _safe_next_url(request, default=reverse('game_entry:portal'))
@@ -79,33 +82,27 @@ def lineup_slot(request, game_id, team_key, order):
 	if scorecard.is_finalized:
 		return _render_team_section(request, game, scorecard, team_key, 'Unfinalize the game before editing lineups.', 'error')
 
-	roster = _roster_for_team(game, team.id)
-	existing = BattingSlot.objects.filter(scorecard=scorecard, team=team, order=order).first()
-
 	if request.method == 'POST':
+		roster = _roster_for_team(game, team.id)
 		form = BattingSlotForm(request.POST, roster_queryset=roster)
-		if form.is_valid():
-			player = form.cleaned_data['player']
-			duplicate = BattingSlot.objects.filter(
-				scorecard=scorecard, team=team, player=player,
-			).exclude(order=order).exists()
-			if duplicate:
-				form.add_error('player', 'This player is already in the lineup.')
-			else:
-				BattingSlot.objects.update_or_create(
-					scorecard=scorecard, team=team, order=order,
-					defaults={'player': player},
-				)
-				return _render_team_section(request, game, scorecard, team_key, 'Lineup updated.', 'success')
-	else:
-		form = BattingSlotForm(
-			roster_queryset=roster,
-			initial={'player': existing.player_id} if existing else None,
-		)
+		if not form.is_valid():
+			return _render_team_section(request, game, scorecard, team_key, 'Choose a valid player.', 'error')
 
-	return render(request, 'game_entry/partials/lineup_slot.html', {
-		'game': game, 'team_key': team_key, 'order': order, 'form': form,
-	})
+		player = form.cleaned_data['player']
+		duplicate = BattingSlot.objects.filter(
+			scorecard=scorecard, team=team, player=player,
+		).exclude(order=order).exists()
+		if duplicate:
+			return _render_team_section(request, game, scorecard, team_key, 'That player is already in the lineup.', 'error')
+
+		BattingSlot.objects.update_or_create(
+			scorecard=scorecard, team=team, order=order,
+			defaults={'player': player},
+		)
+		return _render_team_section(request, game, scorecard, team_key, 'Lineup updated.', 'success')
+
+	# GET: reveal one more row (extra hitter) beyond the default view.
+	return _render_team_section(request, game, scorecard, team_key, min_rows=order)
 
 
 @staff_member_required(login_url='game_entry:sign_in')
@@ -148,9 +145,9 @@ def add_play(request, game_id, team_key):
 			'inning': inning, 'half_inning': half_inning, 'is_last': False,
 			'runners_before': runners_before,
 		}
-	else:
-		editor_ctx = _build_play_editor_context(game, scorecard, team_key, selected_result=request.GET.get('result'))
+		return _render_team_section(request, game, scorecard, team_key, 'Fix the errors below.', 'error', editor_ctx=editor_ctx)
 
+	editor_ctx = _build_play_editor_context(game, scorecard, team_key, selected_result=request.GET.get('result'))
 	return render(request, 'game_entry/partials/play_form.html', {'game': game, **editor_ctx})
 
 
@@ -191,9 +188,9 @@ def edit_play(request, game_id, entry_id):
 			'is_last': services.is_last_play_in_half_inning(entry),
 			'runners_before': runners_before,
 		}
-	else:
-		editor_ctx = _build_play_editor_context(game, scorecard, team_key, entry=entry)
+		return _render_team_section(request, game, scorecard, team_key, 'Fix the errors below.', 'error', editor_ctx=editor_ctx)
 
+	editor_ctx = _build_play_editor_context(game, scorecard, team_key, entry=entry)
 	return render(request, 'game_entry/partials/play_form.html', {'game': game, **editor_ctx})
 
 
@@ -290,8 +287,9 @@ def _get_game_and_scorecard(game_id, user):
 	return game, scorecard
 
 
-def _build_team_grid(scorecard, team, line_summary):
+def _build_team_grid(scorecard, team, line_summary, roster, min_visible_rows=DEFAULT_LINEUP_ROWS):
 	slots = list(BattingSlot.objects.filter(scorecard=scorecard, team=team).select_related('player').order_by('order'))
+	slots_by_order = {slot.order: slot for slot in slots}
 	entries = list(
 		ScorecardEntry.objects.filter(scorecard=scorecard, team=team)
 		.select_related('slot__player')
@@ -306,13 +304,37 @@ def _build_team_grid(scorecard, team, line_summary):
 
 	next_slot = slots[len(entries) % len(slots)] if slots else None
 
+	current_inning = None
+	if not scorecard.is_finalized and next_slot is not None:
+		current_inning, _ = services.current_inning_for_team(scorecard, team)
+
+	max_assigned_order = max(slots_by_order, default=0)
+	visible_rows = max(min_visible_rows, max_assigned_order)
+
 	rows = []
-	for slot in slots:
+	for order in range(1, visible_rows + 1):
+		slot = slots_by_order.get(order)
 		cells = [
-			{'inning': inning, 'plays': entries_by_slot_inning.get((slot.id, inning), [])}
+			{
+				'inning': inning,
+				'plays': entries_by_slot_inning.get((slot.id, inning), []) if slot else [],
+				'show_add': (
+					next_slot is not None and slot is not None
+					and slot.id == next_slot.id and inning == current_inning
+				),
+			}
 			for inning in innings
 		]
-		rows.append({'slot': slot, 'cells': cells, 'is_next': next_slot is not None and slot.id == next_slot.id})
+		form = None
+		if not scorecard.is_finalized:
+			form = BattingSlotForm(
+				roster_queryset=roster,
+				initial={'player': slot.player_id} if slot else None,
+			)
+		rows.append({
+			'order': order, 'slot': slot, 'form': form, 'cells': cells,
+			'is_next': next_slot is not None and slot is not None and slot.id == next_slot.id,
+		})
 
 	return {
 		'team': team,
@@ -320,6 +342,8 @@ def _build_team_grid(scorecard, team, line_summary):
 		'innings': innings,
 		'rows': rows,
 		'next_slot': next_slot,
+		'current_inning': current_inning,
+		'next_add_order': visible_rows + 1 if visible_rows < BattingSlot.MAX_ORDER else None,
 		'runs': line_summary['runs'],
 		'hits': line_summary['hits'],
 		'errors': line_summary['errors'],
@@ -327,23 +351,28 @@ def _build_team_grid(scorecard, team, line_summary):
 	}
 
 
-def _build_workspace_context(game, scorecard):
+def _build_workspace_context(game, scorecard, away_min_rows=None, home_min_rows=None):
 	line_summary = services.compute_line_summary(scorecard)
-	away_grid = _build_team_grid(scorecard, game.away_team, line_summary['away'])
-	home_grid = _build_team_grid(scorecard, game.home_team, line_summary['home'])
+	away_roster = _roster_for_team(game, game.away_team_id)
+	home_roster = _roster_for_team(game, game.home_team_id)
+	away_grid = _build_team_grid(
+		scorecard, game.away_team, line_summary['away'], away_roster, away_min_rows or DEFAULT_LINEUP_ROWS,
+	)
+	home_grid = _build_team_grid(
+		scorecard, game.home_team, line_summary['home'], home_roster, home_min_rows or DEFAULT_LINEUP_ROWS,
+	)
 	away_editor = _build_play_editor_context(game, scorecard, 'away')
 	home_editor = _build_play_editor_context(game, scorecard, 'home')
 
 	return {
 		'game': game,
 		'scorecard': scorecard,
-		'away_roster': _roster_for_team(game, game.away_team_id),
-		'home_roster': _roster_for_team(game, game.home_team_id),
+		'away_roster': away_roster,
+		'home_roster': home_roster,
 		'away_grid': away_grid,
 		'home_grid': home_grid,
 		'away_editor': away_editor,
 		'home_editor': home_editor,
-		'lineup_slot_range': range(1, BattingSlot.MAX_ORDER + 1),
 	}
 
 
@@ -381,12 +410,17 @@ def _build_play_editor_context(game, scorecard, team_key, selected_result=None, 
 	}
 
 
-def _render_team_section(request, game, scorecard, team_key, alert_message='', alert_level='success'):
-	context = _build_workspace_context(game, scorecard)
+def _render_team_section(request, game, scorecard, team_key, alert_message='', alert_level='success', min_rows=None, editor_ctx=None):
+	context = _build_workspace_context(
+		game, scorecard,
+		away_min_rows=min_rows if team_key == 'away' else None,
+		home_min_rows=min_rows if team_key == 'home' else None,
+	)
+	if editor_ctx is not None:
+		context[f'{team_key}_editor'] = editor_ctx
 	grid_html = render_to_string('game_entry/partials/scorecard_grid.html', {
 		'game': game, 'scorecard': scorecard, 'team_key': team_key,
-		'grid': context[f'{team_key}_grid'], 'roster': context[f'{team_key}_roster'],
-		'lineup_slot_range': context['lineup_slot_range'],
+		'grid': context[f'{team_key}_grid'],
 	}, request=request)
 	scoreboard_html = render_to_string('game_entry/partials/scoreboard_summary.html', {
 		'game': game, 'away_grid': context['away_grid'], 'home_grid': context['home_grid'],

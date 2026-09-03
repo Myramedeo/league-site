@@ -4,6 +4,7 @@
     hx-get="{% url 'game_entry:edit_play' game.id entry.id %}"
     hx-target="#{{ team_key }}-play-editor"
     hx-swap="innerHTML"
+    x-on:click="playModalOpen = true"
     {% if scorecard.is_finalized %}disabled{% endif %}
 >
     <span class="font-scoreboard text-[#F2F0E6]">{{ entry.notation|default:entry.get_result_display }}</span>

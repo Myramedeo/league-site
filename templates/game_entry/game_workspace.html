@@ -37,14 +37,42 @@
 
     {% include 'game_entry/partials/scoreboard_summary.html' with game=game away_grid=away_grid home_grid=home_grid %}
 
-    {% include 'game_entry/partials/scorecard_grid.html' with game=game scorecard=scorecard team_key='away' grid=away_grid roster=away_roster lineup_slot_range=lineup_slot_range %}
-    <div id="away-play-editor" class="rounded-2xl border border-[#3F5847] bg-[#1A2A21] p-4">
-        {% include 'game_entry/partials/play_form.html' with game=game team_key='away' slot=away_editor.slot form=away_editor.form entry=away_editor.entry inning=away_editor.inning half_inning=away_editor.half_inning is_last=away_editor.is_last runners_before=away_editor.runners_before %}
+    <div x-data="{ playModalOpen: false }">
+        {% include 'game_entry/partials/scorecard_grid.html' with game=game scorecard=scorecard team_key='away' grid=away_grid %}
+        <div
+            x-show="playModalOpen"
+            x-cloak
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+            @keydown.escape.window="playModalOpen = false"
+        >
+            <div @click.outside="playModalOpen = false" class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-[#3F5847] bg-[#1A2A21] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.4)]">
+                <div class="mb-2 flex justify-end">
+                    <button type="button" class="text-[#8FA090] transition-colors hover:text-[#E8B23D]" @click="playModalOpen = false" aria-label="Close">✕</button>
+                </div>
+                <div id="away-play-editor">
+                    {% include 'game_entry/partials/play_form.html' with game=game team_key='away' slot=away_editor.slot form=away_editor.form entry=away_editor.entry inning=away_editor.inning half_inning=away_editor.half_inning is_last=away_editor.is_last runners_before=away_editor.runners_before %}
+                </div>
+            </div>
+        </div>
     </div>
 
-    {% include 'game_entry/partials/scorecard_grid.html' with game=game scorecard=scorecard team_key='home' grid=home_grid roster=home_roster lineup_slot_range=lineup_slot_range %}
-    <div id="home-play-editor" class="rounded-2xl border border-[#3F5847] bg-[#1A2A21] p-4">
-        {% include 'game_entry/partials/play_form.html' with game=game team_key='home' slot=home_editor.slot form=home_editor.form entry=home_editor.entry inning=home_editor.inning half_inning=home_editor.half_inning is_last=home_editor.is_last runners_before=home_editor.runners_before %}
+    <div x-data="{ playModalOpen: false }">
+        {% include 'game_entry/partials/scorecard_grid.html' with game=game scorecard=scorecard team_key='home' grid=home_grid %}
+        <div
+            x-show="playModalOpen"
+            x-cloak
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+            @keydown.escape.window="playModalOpen = false"
+        >
+            <div @click.outside="playModalOpen = false" class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-[#3F5847] bg-[#1A2A21] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.4)]">
+                <div class="mb-2 flex justify-end">
+                    <button type="button" class="text-[#8FA090] transition-colors hover:text-[#E8B23D]" @click="playModalOpen = false" aria-label="Close">✕</button>
+                </div>
+                <div id="home-play-editor">
+                    {% include 'game_entry/partials/play_form.html' with game=game team_key='home' slot=home_editor.slot form=home_editor.form entry=home_editor.entry inning=home_editor.inning half_inning=home_editor.half_inning is_last=home_editor.is_last runners_before=home_editor.runners_before %}
+                </div>
+            </div>
+        </div>
     </div>
 </section>
 {% endblock %}

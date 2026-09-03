@@ -59,18 +59,18 @@ class ScorecardEntry(models.Model):
 	]
 
 	RESULT_CHOICES = [
-		('1B', 'Single'),
-		('2B', 'Double'),
-		('3B', 'Triple'),
-		('HR', 'Home Run'),
-		('BB', 'Walk'),
-		('K', 'Strikeout'),
-		('OUT', 'Out'),
-		('HBP', 'Hit By Pitch'),
-		('E', 'Reached on Error'),
-		('FC', "Fielder's Choice"),
-		('SAC', 'Sacrifice'),
-		('OTHER', 'Other'),
+		('1B', '1B'),
+		('2B', '2B'),
+		('3B', '3B'),
+		('HR', 'HR'),
+		('BB', 'BB'),
+		('K', 'K'),
+		('OUT', 'OUT'),
+		('HBP', 'HBP'),
+		('E', 'E'),
+		('FC', 'FC'),
+		('SAC', 'SAC'),
+		('OTHER', 'OTHER'),
 	]
 
 	# Results that count toward a player's hit total.

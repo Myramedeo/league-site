@@ -6,7 +6,7 @@ SELECT_STYLE = 'w-full rounded-md border border-[#3F5847] bg-[#132119] px-3 py-2
 
 
 class BattingSlotForm(forms.Form):
-    player = forms.ModelChoiceField(queryset=None, empty_label='Select player')
+    player = forms.ModelChoiceField(queryset=None, empty_label='-----------')
 
     def __init__(self, *args, roster_queryset, **kwargs):
         super().__init__(*args, **kwargs)

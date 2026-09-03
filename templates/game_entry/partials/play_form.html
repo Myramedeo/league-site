@@ -80,15 +80,6 @@
     </div>
     {% endif %}
 
-    <div>
-        <label class="mb-1 block text-xs uppercase tracking-[0.2em] text-[#8FA090]" for="{{ form.notation.id_for_label }}">Notation</label>
-        {{ form.notation }}
-    </div>
-    <div>
-        <label class="mb-1 block text-xs uppercase tracking-[0.2em] text-[#8FA090]" for="{{ form.notes.id_for_label }}">Notes</label>
-        {{ form.notes }}
-    </div>
-
     {% if form.errors %}
     <ul class="space-y-1 text-xs text-red-400">
         {% for field in form %}{% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}{% endfor %}
@@ -107,6 +98,7 @@
             hx-get="{% url 'game_entry:add_play' game.id team_key %}"
             hx-target="#{{ team_key }}-play-editor"
             hx-swap="innerHTML"
+            x-on:click="playModalOpen = false"
             class="rounded-full border border-[#3F5847] px-4 py-2 text-xs font-scoreboard uppercase tracking-[0.2em] text-[#8FA090] transition-colors hover:border-[#E8B23D] hover:text-[#E8B23D]"
         >Cancel</button>
         {% endif %}
