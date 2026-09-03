@@ -77,6 +77,7 @@ INSTALLED_APPS = [
     'theme',
     'nested_admin',
     'storages',
+    'django_ckeditor_5',
 ]
 
 TAILWIND_APP_NAME = 'theme'
@@ -225,3 +226,18 @@ STORAGES = {
 AWS_S3_FILE_OVERWRITE = False
 AWS_DEFAULT_ACL = None
 AWS_QUERYSTRING_AUTH = False
+
+# django-ckeditor-5 Configuration
+
+CKEDITOR_5_FILE_STORAGE = STORAGES['default']['BACKEND']
+CKEDITOR_5_CONFIGS = {
+    'default': {
+        'toolbar': [
+            'heading', '|',
+            'bold', 'italic', 'underline', 'link', '|',
+            'bulletedList', 'numberedList', 'blockQuote', '|',
+            'insertImage', 'mediaEmbed', '|',
+            'undo', 'redo',
+        ],
+    },
+}

@@ -37,6 +37,7 @@ router.register('games', GameViewSet)
 
 urlpatterns = [
     path('_nested_admin/', include('nested_admin.urls')),
+    path('ckeditor5/', include('django_ckeditor_5.urls')),
     path('admin/', admin.site.urls),
     path('game-entry/', include('game_entry.urls')),
     path('newsletter/', include('newsletter.urls')),

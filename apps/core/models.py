@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.text import slugify
+from django_ckeditor_5.fields import CKEditor5Field
 
 
 class Article(models.Model):
@@ -8,7 +9,7 @@ class Article(models.Model):
     legacy_article_id = models.PositiveIntegerField(unique=True, null=True, blank=True)
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, unique=True, blank=True)
-    content = models.TextField(help_text='Sanitized HTML body.')
+    content = CKEditor5Field(help_text='Sanitized HTML body.', config_name='default')
     published_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

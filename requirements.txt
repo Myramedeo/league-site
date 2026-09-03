@@ -22,6 +22,7 @@ dj-database-url==3.1.2
 Django==6.0.7
 django-anymail==15.0
 django-browser-reload==1.21.0
+django-ckeditor-5==0.2.20
 django-nested-admin==4.1.6
 django-storages==1.14.6
 django-tailwind==4.5.0
