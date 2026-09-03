@@ -51,6 +51,15 @@ class GameResultInline(nested_admin.NestedStackedInline):
     extra = 0
     inlines = [InningScoreInline]
 
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 @admin.register(Game)
 class GameAdmin(nested_admin.NestedModelAdmin):
     list_display = (
