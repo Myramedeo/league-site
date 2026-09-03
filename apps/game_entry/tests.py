@@ -58,6 +58,29 @@ class GameEntryPortalTests(TestCase):
         self.assertNotContains(response, 'Archive Field')
         self.assertContains(response, reverse('game_entry:game_workspace', args=[current_game.id]))
 
+    def test_portal_shows_unplayed_games_before_completed_games(self):
+        completed_game = Game.objects.create(
+            season=self.current_season,
+            home_team=self.hawks,
+            away_team=self.owls,
+            date='2026-07-10',
+            venue='Completed Field',
+            status='F',
+        )
+        upcoming_game = Game.objects.create(
+            season=self.current_season,
+            home_team=self.hawks,
+            away_team=self.bears,
+            date='2026-07-20',
+            venue='Upcoming Field',
+        )
+
+        self.client.force_login(self.staff_user)
+        response = self.client.get(self.url)
+
+        self.assertEqual(list(response.context['upcoming_games']), [upcoming_game])
+        self.assertEqual(list(response.context['completed_games']), [completed_game])
+
     def test_anonymous_user_redirected_to_admin_login(self):
         response = self.client.get(self.url)
 
