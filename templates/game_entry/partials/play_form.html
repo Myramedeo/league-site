@@ -20,8 +20,8 @@
     hx-swap="outerHTML"
     class="mt-3 space-y-3"
     x-data="{submitting: false}"
-    x-on:htmx:before-request="submitting = true"
-    x-on:htmx:after-request="submitting = false"
+    x-on:htmx:before-request="if ($event.target === $el) submitting = true"
+    x-on:htmx:after-request="if ($event.target === $el) submitting = false"
 >
     {% csrf_token %}
 
@@ -30,19 +30,25 @@
         <select
             name="result"
             id="{{ form.result.id_for_label }}"
-            class="w-full rounded-md border border-[#3F5847] bg-[#132119] px-3 py-2 text-sm text-[#F2F0E6] focus:border-[#E8B23D] focus:outline-none"
+            class="w-full rounded-md border border-[#3F5847] bg-[#132119] px-3 py-2 text-sm text-[#F2F0E6] focus:border-[#E8B23D] focus:outline-none disabled:opacity-60"
             {% if not entry %}
             hx-get="{% url 'game_entry:add_play' game.id team_key %}"
             hx-target="#{{ team_key }}-play-editor"
             hx-swap="innerHTML"
             hx-trigger="change"
             hx-include="closest form"
+            hx-sync="#{{ team_key }}-play-editor:replace"
+            hx-indicator="#{{ team_key }}-result-indicator"
+            hx-disabled-elt="this"
             {% endif %}
         >
             {% for value, label in form.fields.result.choices %}
             <option value="{{ value }}" {% if form.result.value == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
         </select>
+        {% if not entry %}
+        <span id="{{ team_key }}-result-indicator" class="htmx-indicator mt-1 block text-[10px] uppercase tracking-[0.2em] text-[#8FA090]">Updating suggested fields…</span>
+        {% endif %}
     </div>
 
     <div class="grid grid-cols-2 gap-3">
@@ -98,6 +104,7 @@
             hx-get="{% url 'game_entry:add_play' game.id team_key %}"
             hx-target="#{{ team_key }}-play-editor"
             hx-swap="innerHTML"
+            hx-sync="#{{ team_key }}-play-editor:replace"
             x-on:click="playModalOpen = false"
             class="rounded-full border border-[#3F5847] px-4 py-2 text-xs font-scoreboard uppercase tracking-[0.2em] text-[#8FA090] transition-colors hover:border-[#E8B23D] hover:text-[#E8B23D]"
         >Cancel</button>

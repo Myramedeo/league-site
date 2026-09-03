@@ -4,6 +4,7 @@
     hx-get="{% url 'game_entry:edit_play' game.id entry.id %}"
     hx-target="#{{ team_key }}-play-editor"
     hx-swap="innerHTML"
+    hx-sync="#{{ team_key }}-play-editor:replace"
     x-on:click="playModalOpen = true"
     {% if scorecard.is_finalized %}disabled{% endif %}
 >

@@ -10,6 +10,7 @@
                 hx-get="{% url 'game_entry:add_play' game.id team_key %}"
                 hx-target="#{{ team_key }}-play-editor"
                 hx-swap="innerHTML"
+                hx-sync="#{{ team_key }}-play-editor:replace"
                 x-on:click="playModalOpen = true"
             >+ Record play</button>
         </div>
