@@ -1,0 +1,13 @@
+<form
+    hx-post="{% url 'game_entry:lineup_slot' game.id team_key order %}"
+    hx-target="#{{ team_key }}-grid"
+    hx-swap="outerHTML"
+    class="flex flex-wrap items-center gap-2"
+>
+    {% csrf_token %}
+    {{ form.player }}
+    <button type="submit" class="rounded-full bg-[#E8B23D] px-3 py-1 text-xs font-scoreboard uppercase tracking-[0.2em] text-[#16241B] transition-colors hover:bg-[#F2C463]">Save</button>
+</form>
+{% if form.player.errors %}
+<p class="mt-1 text-xs text-red-400">{{ form.player.errors|join:', ' }}</p>
+{% endif %}

@@ -1,0 +1,7 @@
+<div id="workspace-alerts" class="space-y-3" hx-swap-oob="outerHTML">
+    {% if message %}
+    <div class="rounded-xl border px-4 py-3 text-sm {% if level == 'success' %}border-[#E8B23D] bg-[#E8B23D]/10 text-[#E8B23D]{% else %}border-red-800 bg-red-900/20 text-red-300{% endif %}">
+        {{ message }}
+    </div>
+    {% endif %}
+</div>

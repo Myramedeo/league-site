@@ -1,0 +1,11 @@
+<button
+    type="button"
+    class="inline-flex min-w-[2.75rem] flex-col items-center rounded-md border border-[#33493B] bg-[#132119] px-2 py-1 text-xs transition-colors hover:border-[#E8B23D] disabled:cursor-not-allowed disabled:hover:border-[#33493B]"
+    hx-get="{% url 'game_entry:edit_play' game.id entry.id %}"
+    hx-target="#{{ team_key }}-play-editor"
+    hx-swap="innerHTML"
+    {% if scorecard.is_finalized %}disabled{% endif %}
+>
+    <span class="font-scoreboard text-[#F2F0E6]">{{ entry.notation|default:entry.get_result_display }}</span>
+    {% if entry.rbi %}<span class="text-[10px] text-[#8FA090]">{{ entry.rbi }} RBI</span>{% endif %}
+</button>

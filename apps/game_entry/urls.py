@@ -1,13 +1,16 @@
 from django.urls import path
 
 from .views import (
+    add_inning,
+    add_play,
+    delete_play,
+    edit_play,
+    finalize_game,
     game_workspace,
+    lineup_slot,
     portal,
-    record_plate_appearance_fragment,
-    save_lineups_fragment,
     staff_sign_in,
-    substitution_fragment,
-    update_game_state_fragment,
+    unfinalize_game,
 )
 
 app_name = 'game_entry'
@@ -16,8 +19,11 @@ urlpatterns = [
     path('sign-in/', staff_sign_in, name='sign_in'),
     path('', portal, name='portal'),
     path('games/<int:game_id>/', game_workspace, name='game_workspace'),
-    path('games/<int:game_id>/state/', update_game_state_fragment, name='game_state_fragment'),
-    path('games/<int:game_id>/plate-appearance/', record_plate_appearance_fragment, name='plate_appearance_fragment'),
-    path('games/<int:game_id>/lineups/', save_lineups_fragment, name='lineups_fragment'),
-    path('games/<int:game_id>/substitution/<str:team_key>/', substitution_fragment, name='substitution_fragment'),
+    path('games/<int:game_id>/lineup/<str:team_key>/<int:order>/', lineup_slot, name='lineup_slot'),
+    path('games/<int:game_id>/plays/<str:team_key>/', add_play, name='add_play'),
+    path('games/<int:game_id>/plays/<int:entry_id>/edit/', edit_play, name='edit_play'),
+    path('games/<int:game_id>/plays/<int:entry_id>/delete/', delete_play, name='delete_play'),
+    path('games/<int:game_id>/innings/add/', add_inning, name='add_inning'),
+    path('games/<int:game_id>/finalize/', finalize_game, name='finalize'),
+    path('games/<int:game_id>/unfinalize/', unfinalize_game, name='unfinalize'),
 ]

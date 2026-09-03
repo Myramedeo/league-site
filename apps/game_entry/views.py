@@ -1,9 +1,10 @@
+from collections import defaultdict
+
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import login
 from django.contrib.auth.forms import AuthenticationForm
-from django.db import transaction
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -13,8 +14,9 @@ from games.models import Game
 from players.models import Player, Roster
 from teams.models import Season
 
-from .forms import GameStateForm, LineupSubstitutionForm, TeamLineupForm
-from .models import LineupSpot, LineupSubstitution, PlateAppearance, ScoringSession, TeamLineup
+from . import services
+from .forms import BattingSlotForm, ScorecardEntryForm
+from .models import BattingSlot, GameScorecard, ScorecardEntry
 
 
 def staff_sign_in(request):
@@ -64,148 +66,197 @@ def portal(request):
 
 @staff_member_required(login_url='game_entry:sign_in')
 def game_workspace(request, game_id):
-	game, session = _get_game_and_session(game_id, request.user)
-	context = _build_workspace_render_context(game, session)
-
-	if request.method == 'POST':
-		action = request.POST.get('action')
-		if action == 'save_lineups':
-			result = _save_lineups_action(request, game, session)
-			if result['success']:
-				messages.success(request, result['message'])
-				return HttpResponseRedirect(reverse('game_entry:game_workspace', args=[game.id]))
-			messages.error(request, result['message'])
-			if result.get('redirect_on_error'):
-				return HttpResponseRedirect(reverse('game_entry:game_workspace', args=[game.id]))
-			context['away_form'] = result.get('away_form', context['away_form'])
-			context['home_form'] = result.get('home_form', context['home_form'])
-		elif action == 'update_game_state':
-			result = _update_game_state_action(request, game, session)
-			if result['success']:
-				messages.success(request, result['message'])
-				return HttpResponseRedirect(reverse('game_entry:game_workspace', args=[game.id]))
-			messages.error(request, result['message'])
-			context['state_form'] = result['state_form']
-		elif action in ('substitute_away', 'substitute_home'):
-			team_key = 'away' if action == 'substitute_away' else 'home'
-			result = _substitution_action(request, game, session, team_key)
-			if result['success']:
-				messages.success(request, result['message'])
-				return HttpResponseRedirect(reverse('game_entry:game_workspace', args=[game.id]))
-			messages.error(request, result['message'])
-			if team_key == 'away' and result.get('sub_form') is not None:
-				context['away_substitution_form'] = result['sub_form']
-			if team_key == 'home' and result.get('sub_form') is not None:
-				context['home_substitution_form'] = result['sub_form']
-			if result.get('redirect_on_error'):
-				return HttpResponseRedirect(reverse('game_entry:game_workspace', args=[game.id]))
-		elif action == 'record_plate_appearance':
-			result = _record_plate_appearance_action(request, game, session)
-			if result['success']:
-				messages.success(request, result['message'])
-				return HttpResponseRedirect(reverse('game_entry:game_workspace', args=[game.id]))
-			messages.error(request, result['message'])
-			if result.get('redirect_on_error', True):
-				return HttpResponseRedirect(reverse('game_entry:game_workspace', args=[game.id]))
-
+	game, scorecard = _get_game_and_scorecard(game_id, request.user)
+	context = _build_workspace_context(game, scorecard)
 	return render(request, 'game_entry/game_workspace.html', context)
 
 
 @staff_member_required(login_url='game_entry:sign_in')
-def update_game_state_fragment(request, game_id):
-	if request.method != 'POST':
-		return redirect('game_entry:game_workspace', game_id=game_id)
+def lineup_slot(request, game_id, team_key, order):
+	game, scorecard = _get_game_and_scorecard(game_id, request.user)
+	team = _team_for_key(game, team_key)
 
-	game, session = _get_game_and_session(game_id, request.user)
-	result = _update_game_state_action(request, game, session)
-	if result['success']:
-		return _render_state_fragment_response(
-			request,
-			game,
-			session,
-			result['state_form'],
-			alert_message=result['message'],
-			alert_level='success',
-		)
-	return _render_state_fragment_response(
-		request,
-		game,
-		session,
-		result['state_form'],
-		alert_message=result['message'],
-		alert_level='error',
-	)
+	if scorecard.is_finalized:
+		return _render_team_section(request, game, scorecard, team_key, 'Unfinalize the game before editing lineups.', 'error')
 
+	roster = _roster_for_team(game, team.id)
+	existing = BattingSlot.objects.filter(scorecard=scorecard, team=team, order=order).first()
 
-@staff_member_required(login_url='game_entry:sign_in')
-def record_plate_appearance_fragment(request, game_id):
-	if request.method != 'POST':
-		return redirect('game_entry:game_workspace', game_id=game_id)
-
-	game, session = _get_game_and_session(game_id, request.user)
-	result = _record_plate_appearance_action(request, game, session)
-	if result['success'] and result.get('started_now'):
-		response = HttpResponse('')
-		response['HX-Redirect'] = reverse('game_entry:game_workspace', args=[game.id])
-		return response
-
-	away_lineup = _get_team_lineup(session, game.away_team_id)
-	home_lineup = _get_team_lineup(session, game.home_team_id)
-	return _render_plate_appearance_fragment_response(
-		request,
-		game,
-		session,
-		away_lineup,
-		home_lineup,
-		selected_team=result['selected_team'],
-		selected_result=result['selected_result'],
-		notes=result['notes'],
-		alert_message=result['message'],
-		alert_level='success' if result['success'] else 'error',
-	)
-
-
-@staff_member_required(login_url='game_entry:sign_in')
-def save_lineups_fragment(request, game_id):
-	if request.method != 'POST':
-		return redirect('game_entry:game_workspace', game_id=game_id)
-
-	game, session = _get_game_and_session(game_id, request.user)
-	result = _save_lineups_action(request, game, session)
-	updated_context = _build_workspace_render_context(
-		game,
-		session,
-		away_form=result.get('away_form'),
-		home_form=result.get('home_form'),
-	)
-	return _render_lineup_fragment_response(
-		request,
-		updated_context,
-		alert_message=result['message'],
-		alert_level='success' if result['success'] else 'error',
-	)
-
-
-@staff_member_required(login_url='game_entry:sign_in')
-def substitution_fragment(request, game_id, team_key):
-	if request.method != 'POST':
-		return redirect('game_entry:game_workspace', game_id=game_id)
-
-	if team_key not in ('away', 'home'):
-		return redirect('game_entry:game_workspace', game_id=game_id)
-
-	game, session = _get_game_and_session(game_id, request.user)
-	result = _substitution_action(request, game, session, team_key)
-	if team_key == 'away':
-		updated_context = _build_workspace_render_context(game, session, away_substitution_form=result.get('sub_form'))
+	if request.method == 'POST':
+		form = BattingSlotForm(request.POST, roster_queryset=roster)
+		if form.is_valid():
+			player = form.cleaned_data['player']
+			duplicate = BattingSlot.objects.filter(
+				scorecard=scorecard, team=team, player=player,
+			).exclude(order=order).exists()
+			if duplicate:
+				form.add_error('player', 'This player is already in the lineup.')
+			else:
+				BattingSlot.objects.update_or_create(
+					scorecard=scorecard, team=team, order=order,
+					defaults={'player': player},
+				)
+				return _render_team_section(request, game, scorecard, team_key, 'Lineup updated.', 'success')
 	else:
-		updated_context = _build_workspace_render_context(game, session, home_substitution_form=result.get('sub_form'))
-	return _render_substitution_fragment_response(
-		request,
-		updated_context,
-		alert_message=result['message'],
-		alert_level='success' if result['success'] else 'error',
+		form = BattingSlotForm(
+			roster_queryset=roster,
+			initial={'player': existing.player_id} if existing else None,
+		)
+
+	return render(request, 'game_entry/partials/lineup_slot.html', {
+		'game': game, 'team_key': team_key, 'order': order, 'form': form,
+	})
+
+
+@staff_member_required(login_url='game_entry:sign_in')
+def add_play(request, game_id, team_key):
+	game, scorecard = _get_game_and_scorecard(game_id, request.user)
+	team = _team_for_key(game, team_key)
+
+	if scorecard.is_finalized:
+		return _render_team_section(request, game, scorecard, team_key, 'Unfinalize the game before recording plays.', 'error')
+
+	if request.method == 'POST':
+		slot = services.next_batting_slot(scorecard, team)
+		if not slot:
+			return _render_team_section(request, game, scorecard, team_key, "Set this team's lineup before recording plays.", 'error')
+
+		inning, half_inning = services.current_inning_for_team(scorecard, team)
+		runner_1st, runner_2nd, runner_3rd, _ = services.derive_base_state(scorecard, team, inning, half_inning)
+		runners_before = (runner_1st, runner_2nd, runner_3rd)
+		form = ScorecardEntryForm(request.POST, runners_before=runners_before)
+		if form.is_valid():
+			play_index = services.next_play_index(scorecard, team, inning, half_inning)
+			ScorecardEntry.objects.create(
+				scorecard=scorecard, slot=slot, team=team,
+				inning=inning, half_inning=half_inning, play_index=play_index,
+				result=form.cleaned_data['result'],
+				outs_recorded=form.cleaned_data['outs_recorded'],
+				rbi=form.cleaned_data['rbi'],
+				batter_ending_base=form.cleaned_data['batter_ending_base'],
+				runner_1st_before=runner_1st, runner_1st_ending=form.cleaned_data.get('runner_1st_ending', ''),
+				runner_2nd_before=runner_2nd, runner_2nd_ending=form.cleaned_data.get('runner_2nd_ending', ''),
+				runner_3rd_before=runner_3rd, runner_3rd_ending=form.cleaned_data.get('runner_3rd_ending', ''),
+				notation=form.cleaned_data['notation'],
+				notes=form.cleaned_data['notes'],
+				recorded_by=request.user,
+			)
+			return _render_team_section(request, game, scorecard, team_key, f'Recorded {slot.player}.', 'success')
+
+		editor_ctx = {
+			'team_key': team_key, 'slot': slot, 'form': form, 'entry': None,
+			'inning': inning, 'half_inning': half_inning, 'is_last': False,
+			'runners_before': runners_before,
+		}
+	else:
+		editor_ctx = _build_play_editor_context(game, scorecard, team_key, selected_result=request.GET.get('result'))
+
+	return render(request, 'game_entry/partials/play_form.html', {'game': game, **editor_ctx})
+
+
+@staff_member_required(login_url='game_entry:sign_in')
+def edit_play(request, game_id, entry_id):
+	game, scorecard = _get_game_and_scorecard(game_id, request.user)
+	entry = get_object_or_404(
+		ScorecardEntry.objects.select_related('slot__player', 'runner_1st_before', 'runner_2nd_before', 'runner_3rd_before'),
+		id=entry_id, scorecard=scorecard,
 	)
+	team_key = 'away' if entry.team_id == game.away_team_id else 'home'
+
+	if scorecard.is_finalized:
+		return _render_team_section(request, game, scorecard, team_key, 'Unfinalize the game before editing plays.', 'error')
+
+	runners_before = (entry.runner_1st_before, entry.runner_2nd_before, entry.runner_3rd_before)
+
+	if request.method == 'POST':
+		form = ScorecardEntryForm(request.POST, runners_before=runners_before)
+		if form.is_valid():
+			entry.result = form.cleaned_data['result']
+			entry.outs_recorded = form.cleaned_data['outs_recorded']
+			entry.rbi = form.cleaned_data['rbi']
+			entry.batter_ending_base = form.cleaned_data['batter_ending_base']
+			entry.runner_1st_ending = form.cleaned_data.get('runner_1st_ending', '')
+			entry.runner_2nd_ending = form.cleaned_data.get('runner_2nd_ending', '')
+			entry.runner_3rd_ending = form.cleaned_data.get('runner_3rd_ending', '')
+			entry.notation = form.cleaned_data['notation']
+			entry.notes = form.cleaned_data['notes']
+			entry.save()
+			is_last = services.is_last_play_in_half_inning(entry)
+			alert = 'Play updated.' if is_last else 'Play updated. Review later plays in this half-inning for consistency.'
+			return _render_team_section(request, game, scorecard, team_key, alert, 'success')
+
+		editor_ctx = {
+			'team_key': team_key, 'slot': entry.slot, 'form': form, 'entry': entry,
+			'inning': entry.inning, 'half_inning': entry.half_inning,
+			'is_last': services.is_last_play_in_half_inning(entry),
+			'runners_before': runners_before,
+		}
+	else:
+		editor_ctx = _build_play_editor_context(game, scorecard, team_key, entry=entry)
+
+	return render(request, 'game_entry/partials/play_form.html', {'game': game, **editor_ctx})
+
+
+@staff_member_required(login_url='game_entry:sign_in')
+def delete_play(request, game_id, entry_id):
+	if request.method != 'POST':
+		return redirect('game_entry:game_workspace', game_id=game_id)
+
+	game, scorecard = _get_game_and_scorecard(game_id, request.user)
+	entry = get_object_or_404(ScorecardEntry, id=entry_id, scorecard=scorecard)
+	team_key = 'away' if entry.team_id == game.away_team_id else 'home'
+
+	if scorecard.is_finalized:
+		return _render_team_section(request, game, scorecard, team_key, 'Unfinalize the game before deleting plays.', 'error')
+
+	if not services.is_last_play_in_half_inning(entry):
+		return _render_team_section(request, game, scorecard, team_key, 'Only the most recent play in a half-inning can be deleted.', 'error')
+
+	entry.delete()
+	return _render_team_section(request, game, scorecard, team_key, 'Play deleted.', 'success')
+
+
+@staff_member_required(login_url='game_entry:sign_in')
+def add_inning(request, game_id):
+	if request.method != 'POST':
+		return redirect('game_entry:game_workspace', game_id=game_id)
+
+	game, scorecard = _get_game_and_scorecard(game_id, request.user)
+	if scorecard.is_finalized:
+		messages.error(request, 'Unfinalize the game before adding innings.')
+	else:
+		scorecard.add_inning()
+	return redirect('game_entry:game_workspace', game_id=game_id)
+
+
+@staff_member_required(login_url='game_entry:sign_in')
+def finalize_game(request, game_id):
+	if request.method != 'POST':
+		return redirect('game_entry:game_workspace', game_id=game_id)
+
+	game, scorecard = _get_game_and_scorecard(game_id, request.user)
+	services.finalize_scorecard(scorecard)
+	messages.success(request, 'Game finalized. Score and stats have been saved.')
+	return redirect('game_entry:game_workspace', game_id=game_id)
+
+
+@staff_member_required(login_url='game_entry:sign_in')
+def unfinalize_game(request, game_id):
+	if request.method != 'POST':
+		return redirect('game_entry:game_workspace', game_id=game_id)
+
+	game, scorecard = _get_game_and_scorecard(game_id, request.user)
+	services.unfinalize_scorecard(scorecard)
+	messages.info(request, 'Game unfinalized. You can edit lineups and plays again.')
+	return redirect('game_entry:game_workspace', game_id=game_id)
+
+
+def _team_for_key(game, team_key):
+	if team_key == 'away':
+		return game.away_team
+	if team_key == 'home':
+		return game.home_team
+	raise Http404('Invalid team key.')
 
 
 def _roster_for_team(game, team_id):
@@ -214,24 +265,6 @@ def _roster_for_team(game, team_id):
 		team_id=team_id,
 	).values_list('player_id', flat=True)
 	return Player.objects.filter(id__in=roster_player_ids).order_by('last_name', 'first_name')
-
-
-def _lineup_players(team_lineup):
-	if not team_lineup:
-		return []
-	return [spot.player for spot in team_lineup.batting_order]
-
-
-def _combined_roster_for_game(game):
-	roster_player_ids = Roster.objects.filter(
-		season=game.season,
-		team_id__in=[game.home_team_id, game.away_team_id],
-	).values_list('player_id', flat=True)
-	return Player.objects.filter(id__in=roster_player_ids).order_by('last_name', 'first_name')
-
-
-def _get_team_lineup(session, team_id):
-	return TeamLineup.objects.filter(session=session, team_id=team_id).prefetch_related('spots__player').first()
 
 
 def _safe_next_url(request, default):
@@ -245,488 +278,124 @@ def _safe_next_url(request, default):
 	return default
 
 
-def _save_lineup(session, team_id, ordered_players):
-	lineup, _ = TeamLineup.objects.get_or_create(session=session, team_id=team_id)
-	lineup.spots.all().delete()
-	LineupSpot.objects.bulk_create([
-		LineupSpot(team_lineup=lineup, player=player, batting_order=index)
-		for index, player in enumerate(ordered_players, start=1)
-	])
-	lineup.batting_index = 0
-	lineup.save(update_fields=['batting_index'])
-	return lineup
-
-
-def _get_game_and_session(game_id, user):
+def _get_game_and_scorecard(game_id, user):
 	game = get_object_or_404(
 		Game.objects.select_related('season', 'home_team', 'away_team', 'result'),
 		id=game_id,
 	)
-	session, _ = ScoringSession.objects.get_or_create(
+	scorecard, _ = GameScorecard.objects.get_or_create(
 		game=game,
-		defaults={'started_by': user},
+		defaults={'created_by': user},
 	)
-	return game, session
+	return game, scorecard
 
 
-def _save_lineups_action(request, game, session):
-	# Shared mutation path for full-page POST and HTMX fragment requests.
-	if session.has_started:
-		return {
-			'success': False,
-			'message': 'Lineups are locked after scoring starts. Use substitutions to make changes.',
-			'redirect_on_error': True,
-		}
-
-	away_roster = _roster_for_team(game, game.away_team_id)
-	home_roster = _roster_for_team(game, game.home_team_id)
-	away_lineup = _get_team_lineup(session, game.away_team_id)
-	home_lineup = _get_team_lineup(session, game.home_team_id)
-
-	away_form = TeamLineupForm(
-		request.POST,
-		prefix='away',
-		roster_queryset=away_roster,
-		team_label=f'{game.away_team} batting order',
-		initial_players=_lineup_players(away_lineup),
+def _build_team_grid(scorecard, team, line_summary):
+	slots = list(BattingSlot.objects.filter(scorecard=scorecard, team=team).select_related('player').order_by('order'))
+	entries = list(
+		ScorecardEntry.objects.filter(scorecard=scorecard, team=team)
+		.select_related('slot__player')
+		.order_by('inning', 'play_index')
 	)
-	home_form = TeamLineupForm(
-		request.POST,
-		prefix='home',
-		roster_queryset=home_roster,
-		team_label=f'{game.home_team} batting order',
-		initial_players=_lineup_players(home_lineup),
-	)
+	max_entry_inning = max((entry.inning for entry in entries), default=0)
+	innings = list(range(1, max(scorecard.displayed_innings, max_entry_inning) + 1))
 
-	if away_form.is_valid() and home_form.is_valid():
-		with transaction.atomic():
-			_save_lineup(session, game.away_team_id, away_form.cleaned_data['ordered_players'])
-			_save_lineup(session, game.home_team_id, home_form.cleaned_data['ordered_players'])
-			session.lineups_locked = False
-			session.save(update_fields=['lineups_locked', 'updated_at'])
-		return {
-			'success': True,
-			'message': 'Lineups saved. You can start scoring now.',
-		}
+	entries_by_slot_inning = defaultdict(list)
+	for entry in entries:
+		entries_by_slot_inning[(entry.slot_id, entry.inning)].append(entry)
+
+	next_slot = slots[len(entries) % len(slots)] if slots else None
+
+	rows = []
+	for slot in slots:
+		cells = [
+			{'inning': inning, 'plays': entries_by_slot_inning.get((slot.id, inning), [])}
+			for inning in innings
+		]
+		rows.append({'slot': slot, 'cells': cells, 'is_next': next_slot is not None and slot.id == next_slot.id})
 
 	return {
-		'success': False,
-		'message': 'Fix lineup errors before starting scoring.',
-		'away_form': away_form,
-		'home_form': home_form,
+		'team': team,
+		'slots': slots,
+		'innings': innings,
+		'rows': rows,
+		'next_slot': next_slot,
+		'runs': line_summary['runs'],
+		'hits': line_summary['hits'],
+		'errors': line_summary['errors'],
+		'inning_runs': line_summary['inning_runs'],
 	}
 
 
-def _update_game_state_action(request, game, session):
-	# Returns a fresh bound/unbound state form so callers can render directly.
-	all_roster_players = _combined_roster_for_game(game)
-	state_form = GameStateForm(
-		request.POST,
-		prefix='state',
-		player_queryset=all_roster_players,
-	)
-
-	if state_form.is_valid():
-		session.current_inning = state_form.cleaned_data['current_inning']
-		session.half_inning = state_form.cleaned_data['half_inning']
-		session.outs = state_form.cleaned_data['outs']
-		session.first_base_runner = state_form.cleaned_data['first_base_runner']
-		session.second_base_runner = state_form.cleaned_data['second_base_runner']
-		session.third_base_runner = state_form.cleaned_data['third_base_runner']
-		session.save(update_fields=[
-			'current_inning',
-			'half_inning',
-			'outs',
-			'first_base_runner',
-			'second_base_runner',
-			'third_base_runner',
-			'updated_at',
-		])
-		state_form = GameStateForm(
-			prefix='state',
-			player_queryset=all_roster_players,
-			initial={
-				'current_inning': session.current_inning,
-				'half_inning': session.half_inning,
-				'outs': session.outs,
-				'first_base_runner': session.first_base_runner,
-				'second_base_runner': session.second_base_runner,
-				'third_base_runner': session.third_base_runner,
-			},
-		)
-		return {
-			'success': True,
-			'message': 'Game state updated.',
-			'state_form': state_form,
-		}
-
-	return {
-		'success': False,
-		'message': 'Fix game state errors before saving.',
-		'state_form': state_form,
-	}
-
-
-def _substitution_action(request, game, session, team_key):
-	# Team-agnostic substitution logic keyed by 'away' or 'home'.
-	away_lineup = _get_team_lineup(session, game.away_team_id)
-	home_lineup = _get_team_lineup(session, game.home_team_id)
-	away_roster = _roster_for_team(game, game.away_team_id)
-	home_roster = _roster_for_team(game, game.home_team_id)
-
-	if team_key == 'away':
-		target_lineup = away_lineup
-		target_roster = away_roster
-		form_prefix = 'away_sub'
-		target_team = game.away_team
-	else:
-		target_lineup = home_lineup
-		target_roster = home_roster
-		form_prefix = 'home_sub'
-		target_team = game.home_team
-
-	if not target_lineup or not target_lineup.spots.exists():
-		return {
-			'success': False,
-			'message': 'Save lineups before recording substitutions.',
-			'redirect_on_error': True,
-		}
-
-	sub_form = LineupSubstitutionForm(
-		request.POST,
-		prefix=form_prefix,
-		lineup=target_lineup,
-		roster_queryset=target_roster,
-	)
-
-	if sub_form.is_valid():
-		spot = sub_form.cleaned_data['spot']
-		outgoing_player = sub_form.cleaned_data['outgoing_player']
-		incoming_player = sub_form.cleaned_data['incoming_player']
-		spot.player = incoming_player
-		spot.save(update_fields=['player'])
-
-		LineupSubstitution.objects.create(
-			session=session,
-			lineup=target_lineup,
-			team=target_team,
-			batting_order=spot.batting_order,
-			outgoing_player=outgoing_player,
-			incoming_player=incoming_player,
-			notes=sub_form.cleaned_data.get('notes', ''),
-			recorded_by=request.user,
-		)
-		return {
-			'success': True,
-			'message': f'Substitution saved: {outgoing_player} -> {incoming_player} at spot {spot.batting_order}.',
-		}
-
-	return {
-		'success': False,
-		'message': 'Fix substitution errors before saving.',
-		'sub_form': sub_form,
-		'redirect_on_error': False,
-	}
-
-
-def _record_plate_appearance_action(request, game, session):
-	# Carries enough response metadata for both redirect and fragment callers.
-	away_lineup = _get_team_lineup(session, game.away_team_id)
-	home_lineup = _get_team_lineup(session, game.home_team_id)
-
-	team_key = request.POST.get('offense_team')
-	result = request.POST.get('result', 'OTHER')
-	notes = request.POST.get('notes', '').strip()
-	valid_results = {choice[0] for choice in PlateAppearance.RESULT_CHOICES}
-	if result not in valid_results:
-		result = 'OTHER'
-
-	if team_key == 'away':
-		target_lineup = away_lineup
-	elif team_key == 'home':
-		target_lineup = home_lineup
-	else:
-		target_lineup = None
-
-	selected_team = team_key if team_key in ('away', 'home') else 'away'
-
-	if not target_lineup or not target_lineup.spots.exists():
-		return {
-			'success': False,
-			'message': 'Set and save both lineups before recording plate appearances.',
-			'redirect_on_error': True,
-			'selected_team': selected_team,
-			'selected_result': result,
-			'notes': notes,
-		}
-
-	batter = target_lineup.current_batter
-	if not batter:
-		return {
-			'success': False,
-			'message': 'This lineup has no current batter. Save lineups first.',
-			'redirect_on_error': True,
-			'selected_team': selected_team,
-			'selected_result': result,
-			'notes': notes,
-		}
-
-	was_started = session.has_started
-
-	PlateAppearance.objects.create(
-		session=session,
-		lineup=target_lineup,
-		offense_team=target_lineup.team,
-		batter=batter,
-		inning_number=session.current_inning,
-		half_inning=session.half_inning,
-		outs_before=session.outs,
-		first_base_runner_before=session.first_base_runner,
-		second_base_runner_before=session.second_base_runner,
-		third_base_runner_before=session.third_base_runner,
-		result=result,
-		notes=notes,
-		recorded_by=request.user,
-	)
-	session.start_scoring()
-	target_lineup.advance_batter()
-
-	return {
-		'success': True,
-		'message': f'Recorded {result} for {batter}.',
-		'started_now': (not was_started and session.has_started),
-		'selected_team': selected_team,
-		'selected_result': 'OTHER',
-		'notes': '',
-	}
-
-
-def _render_state_fragment_response(request, game, session, state_form, alert_message='', alert_level='success'):
-	state_html = render_to_string(
-		'game_entry/partials/game_state_card.html',
-		{
-			'game': game,
-			'session': session,
-			'state_form': state_form,
-		},
-		request=request,
-	)
-	alerts_html = render_to_string(
-		'game_entry/partials/workspace_alerts.html',
-		{
-			'message': alert_message,
-			'level': alert_level,
-		},
-		request=request,
-	)
-	return HttpResponse(f'{state_html}\n{alerts_html}')
-
-
-def _render_plate_appearance_fragment_response(
-	request,
-	game,
-	session,
-	away_lineup,
-	home_lineup,
-	selected_team,
-	selected_result,
-	notes,
-	alert_message,
-	alert_level,
-):
-	plate_form_html = render_to_string(
-		'game_entry/partials/plate_appearance_card.html',
-		{
-			'game': game,
-			'session': session,
-			'selected_team': selected_team,
-			'selected_result': selected_result,
-			'notes': notes,
-		},
-		request=request,
-	)
-	recent_pa_html = render_to_string(
-		'game_entry/partials/recent_plate_appearances.html',
-		{
-			'plate_appearances': session.plate_appearances.select_related('batter', 'offense_team').all()[:15],
-		},
-		request=request,
-	)
-	away_panel_html = render_to_string(
-		'game_entry/partials/batting_order_panel.html',
-		{
-			'lineup': away_lineup,
-			'team_name': game.away_team,
-			'panel_id': 'away-batting-order-panel',
-		},
-		request=request,
-	)
-	home_panel_html = render_to_string(
-		'game_entry/partials/batting_order_panel.html',
-		{
-			'lineup': home_lineup,
-			'team_name': game.home_team,
-			'panel_id': 'home-batting-order-panel',
-		},
-		request=request,
-	)
-	alerts_html = render_to_string(
-		'game_entry/partials/workspace_alerts.html',
-		{
-			'message': alert_message,
-			'level': alert_level,
-		},
-		request=request,
-	)
-
-	return HttpResponse('\n'.join([
-		plate_form_html,
-		recent_pa_html,
-		away_panel_html,
-		home_panel_html,
-		alerts_html,
-	]))
-
-
-def _build_workspace_render_context(
-	game,
-	session,
-	away_form=None,
-	home_form=None,
-	away_substitution_form=None,
-	home_substitution_form=None,
-	state_form=None,
-):
-	away_roster = _roster_for_team(game, game.away_team_id)
-	home_roster = _roster_for_team(game, game.home_team_id)
-	away_lineup = _get_team_lineup(session, game.away_team_id)
-	home_lineup = _get_team_lineup(session, game.home_team_id)
-	lineup_ready = (
-		away_lineup is not None and away_lineup.spots.exists()
-		and home_lineup is not None and home_lineup.spots.exists()
-	)
-
-	if away_form is None:
-		away_form = TeamLineupForm(
-			prefix='away',
-			roster_queryset=away_roster,
-			team_label=f'{game.away_team} batting order',
-			initial_players=_lineup_players(away_lineup),
-		)
-	if home_form is None:
-		home_form = TeamLineupForm(
-			prefix='home',
-			roster_queryset=home_roster,
-			team_label=f'{game.home_team} batting order',
-			initial_players=_lineup_players(home_lineup),
-		)
-
-	if away_substitution_form is None:
-		away_substitution_form = LineupSubstitutionForm(
-			prefix='away_sub',
-			lineup=away_lineup,
-			roster_queryset=away_roster,
-		)
-	if home_substitution_form is None:
-		home_substitution_form = LineupSubstitutionForm(
-			prefix='home_sub',
-			lineup=home_lineup,
-			roster_queryset=home_roster,
-		)
-
-	if state_form is None:
-		all_roster_players = _combined_roster_for_game(game)
-		state_form = GameStateForm(
-			prefix='state',
-			player_queryset=all_roster_players,
-			initial={
-				'current_inning': session.current_inning,
-				'half_inning': session.half_inning,
-				'outs': session.outs,
-				'first_base_runner': session.first_base_runner,
-				'second_base_runner': session.second_base_runner,
-				'third_base_runner': session.third_base_runner,
-			},
-		)
-
-	plate_appearances = session.plate_appearances.select_related('batter', 'offense_team').all()[:15]
+def _build_workspace_context(game, scorecard):
+	line_summary = services.compute_line_summary(scorecard)
+	away_grid = _build_team_grid(scorecard, game.away_team, line_summary['away'])
+	home_grid = _build_team_grid(scorecard, game.home_team, line_summary['home'])
+	away_editor = _build_play_editor_context(game, scorecard, 'away')
+	home_editor = _build_play_editor_context(game, scorecard, 'home')
 
 	return {
 		'game': game,
-		'session': session,
-		'away_form': away_form,
-		'home_form': home_form,
-		'away_lineup': away_lineup,
-		'home_lineup': home_lineup,
-		'away_substitution_form': away_substitution_form,
-		'home_substitution_form': home_substitution_form,
-		'state_form': state_form,
-		'lineup_ready': lineup_ready,
-		'plate_appearances': plate_appearances,
+		'scorecard': scorecard,
+		'away_roster': _roster_for_team(game, game.away_team_id),
+		'home_roster': _roster_for_team(game, game.home_team_id),
+		'away_grid': away_grid,
+		'home_grid': home_grid,
+		'away_editor': away_editor,
+		'home_editor': home_editor,
+		'lineup_slot_range': range(1, BattingSlot.MAX_ORDER + 1),
 	}
 
 
-def _render_lineup_fragment_response(request, context, alert_message, alert_level):
-	lineup_editor_html = render_to_string(
-		'game_entry/partials/lineup_editor.html',
-		context,
-		request=request,
-	)
-	live_sections_html = render_to_string(
-		'game_entry/partials/workspace_live_sections.html',
-		context,
-		request=request,
-	)
-	alerts_html = render_to_string(
-		'game_entry/partials/workspace_alerts.html',
-		{
-			'message': alert_message,
-			'level': alert_level,
-		},
-		request=request,
-	)
-	return HttpResponse('\n'.join([
-		lineup_editor_html,
-		live_sections_html,
-		alerts_html,
-	]))
+def _build_play_editor_context(game, scorecard, team_key, selected_result=None, entry=None):
+	team = _team_for_key(game, team_key)
+
+	if entry is not None:
+		slot = entry.slot
+		inning, half_inning = entry.inning, entry.half_inning
+		runners_before = (entry.runner_1st_before, entry.runner_2nd_before, entry.runner_3rd_before)
+		initial = {
+			'result': entry.result, 'outs_recorded': entry.outs_recorded, 'rbi': entry.rbi,
+			'batter_ending_base': entry.batter_ending_base,
+			'runner_1st_ending': entry.runner_1st_ending, 'runner_2nd_ending': entry.runner_2nd_ending,
+			'runner_3rd_ending': entry.runner_3rd_ending, 'notation': entry.notation, 'notes': entry.notes,
+		}
+		is_last = services.is_last_play_in_half_inning(entry)
+	else:
+		slot = services.next_batting_slot(scorecard, team)
+		if not slot:
+			return {'team_key': team_key, 'slot': None, 'form': None, 'entry': None}
+		inning, half_inning = services.current_inning_for_team(scorecard, team)
+		runner_1st, runner_2nd, runner_3rd, _ = services.derive_base_state(scorecard, team, inning, half_inning)
+		runners_before = (runner_1st, runner_2nd, runner_3rd)
+		result = selected_result or 'OUT'
+		initial = services.suggest_outcome(result, runners_before)
+		initial['result'] = result
+		is_last = False
+
+	form = ScorecardEntryForm(initial=initial, runners_before=runners_before)
+	return {
+		'team_key': team_key, 'slot': slot, 'form': form, 'entry': entry,
+		'inning': inning, 'half_inning': half_inning, 'is_last': is_last,
+		'runners_before': runners_before,
+	}
 
 
-def _render_substitution_fragment_response(request, context, alert_message, alert_level):
-	substitution_html = render_to_string(
-		'game_entry/partials/substitution_section.html',
-		context,
-		request=request,
+def _render_team_section(request, game, scorecard, team_key, alert_message='', alert_level='success'):
+	context = _build_workspace_context(game, scorecard)
+	grid_html = render_to_string('game_entry/partials/scorecard_grid.html', {
+		'game': game, 'scorecard': scorecard, 'team_key': team_key,
+		'grid': context[f'{team_key}_grid'], 'roster': context[f'{team_key}_roster'],
+		'lineup_slot_range': context['lineup_slot_range'],
+	}, request=request)
+	scoreboard_html = render_to_string('game_entry/partials/scoreboard_summary.html', {
+		'game': game, 'away_grid': context['away_grid'], 'home_grid': context['home_grid'],
+	}, request=request)
+	editor_inner_html = render_to_string(
+		'game_entry/partials/play_form.html', {'game': game, **context[f'{team_key}_editor']}, request=request,
 	)
-	away_panel_html = render_to_string(
-		'game_entry/partials/batting_order_panel.html',
-		{
-			'lineup': context['away_lineup'],
-			'team_name': context['game'].away_team,
-			'panel_id': 'away-batting-order-panel',
-		},
-		request=request,
-	)
-	home_panel_html = render_to_string(
-		'game_entry/partials/batting_order_panel.html',
-		{
-			'lineup': context['home_lineup'],
-			'team_name': context['game'].home_team,
-			'panel_id': 'home-batting-order-panel',
-		},
-		request=request,
-	)
-	alerts_html = render_to_string(
-		'game_entry/partials/workspace_alerts.html',
-		{
-			'message': alert_message,
-			'level': alert_level,
-		},
-		request=request,
-	)
-	return HttpResponse('\n'.join([
-		substitution_html,
-		away_panel_html,
-		home_panel_html,
-		alerts_html,
-	]))
+	editor_html = f'<div id="{team_key}-play-editor" hx-swap-oob="innerHTML">{editor_inner_html}</div>'
+	alerts_html = render_to_string('game_entry/partials/alerts.html', {
+		'message': alert_message, 'level': alert_level,
+	}, request=request)
+	return HttpResponse('\n'.join([grid_html, scoreboard_html, editor_html, alerts_html]))

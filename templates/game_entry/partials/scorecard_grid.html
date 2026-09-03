@@ -1,0 +1,58 @@
+<div id="{{ team_key }}-grid" class="overflow-x-auto rounded-2xl border border-[#3F5847] bg-[#1A2A21] p-4">
+    <div class="mb-4 flex items-center justify-between gap-4">
+        <h2 class="font-display text-2xl uppercase tracking-wide text-[#F2F0E6]">{{ grid.team }}</h2>
+        {% if not scorecard.is_finalized and grid.next_slot %}
+        <span class="font-scoreboard text-xs uppercase tracking-[0.2em] text-[#E8B23D]">Up: {{ grid.next_slot.player }}</span>
+        {% endif %}
+    </div>
+
+    <table class="w-full min-w-[720px] border-collapse text-sm text-[#C9CFC3]">
+        <thead>
+            <tr class="font-scoreboard text-xs uppercase tracking-[0.2em] text-[#8FA090]">
+                <th class="border-b border-[#33493B] py-2 pr-3 text-left">#</th>
+                <th class="border-b border-[#33493B] py-2 pr-3 text-left">Player</th>
+                {% for inning in grid.innings %}
+                <th class="border-b border-[#33493B] px-2 py-2 text-center">{{ inning }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in grid.rows %}
+            <tr class="{% if row.is_next %}bg-[#E8B23D]/10{% endif %}">
+                <td class="border-b border-[#243328] py-2 pr-3">{{ row.slot.order }}</td>
+                <td id="{{ team_key }}-slot-{{ row.slot.order }}" class="border-b border-[#243328] py-2 pr-3 text-[#F2F0E6]">
+                    <button
+                        type="button"
+                        class="hover:text-[#E8B23D] disabled:cursor-not-allowed disabled:hover:text-[#F2F0E6]"
+                        hx-get="{% url 'game_entry:lineup_slot' game.id team_key row.slot.order %}"
+                        hx-target="closest td"
+                        hx-swap="innerHTML"
+                        {% if scorecard.is_finalized %}disabled{% endif %}
+                    >{{ row.slot.player }}</button>
+                </td>
+                {% for cell in row.cells %}
+                <td class="border-b border-[#243328] px-2 py-2 text-center">
+                    <div class="flex flex-wrap items-center justify-center gap-1">
+                        {% for play in cell.plays %}
+                        {% include 'game_entry/partials/play_cell.html' with game=game team_key=team_key entry=play scorecard=scorecard %}
+                        {% endfor %}
+                    </div>
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if not scorecard.is_finalized and grid.slots|length < 12 %}
+    <div class="mt-4" id="{{ team_key }}-add-slot">
+        <button
+            type="button"
+            class="rounded-full border border-[#3F5847] px-4 py-2 text-xs font-scoreboard uppercase tracking-[0.2em] text-[#8FA090] transition-colors hover:border-[#E8B23D] hover:text-[#E8B23D]"
+            hx-get="{% url 'game_entry:lineup_slot' game.id team_key grid.slots|length|add:1 %}"
+            hx-target="this"
+            hx-swap="outerHTML"
+        >+ Add batter</button>
+    </div>
+    {% endif %}
+</div>

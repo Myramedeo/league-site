@@ -1,30 +1,51 @@
 {% extends 'base.html' %}
 
-{% block title %}Scoring Workspace{% endblock %}
+{% block title %}Scorecard{% endblock %}
 
 {% block content %}
 <section class="space-y-8">
     <div id="workspace-alerts" class="space-y-3"></div>
 
     <div class="rounded-3xl border border-[#33493B] bg-[#132119] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.24)]">
-        <p class="font-scoreboard text-xs uppercase tracking-[0.2em] text-[#E8B23D]">Scoring Workspace</p>
+        <p class="font-scoreboard text-xs uppercase tracking-[0.2em] text-[#E8B23D]">Scorecard</p>
         <h1 class="font-display mt-4 text-4xl uppercase tracking-wide text-[#F2F0E6]">{{ game.away_team }} @ {{ game.home_team }}</h1>
         <p class="mt-3 text-sm uppercase tracking-[0.25em] text-[#8FA090]">
             {{ game.date }}{% if game.scheduled_time %} · {{ game.scheduled_time }}{% endif %}
             {% if game.venue %} · {{ game.venue }}{% endif %}
         </p>
-        {% if session.has_started %}
-        <p class="mt-6 inline-flex rounded-full border border-[#E8B23D] bg-[#E8B23D]/10 px-4 py-2 font-scoreboard text-xs uppercase tracking-[0.2em] text-[#E8B23D]">
-            Lineups locked after start
-        </p>
-        {% else %}
-        <p class="mt-6 inline-flex rounded-full border border-[#3F5847] bg-[#1A2A21] px-4 py-2 font-scoreboard text-xs uppercase tracking-[0.2em] text-[#8FA090]">
-            Lineups editable until first plate appearance
-        </p>
-        {% endif %}
+
+        <div class="mt-6 flex flex-wrap items-center gap-4">
+            {% if scorecard.is_finalized %}
+            <p class="inline-flex rounded-full border border-[#E8B23D] bg-[#E8B23D]/10 px-4 py-2 font-scoreboard text-xs uppercase tracking-[0.2em] text-[#E8B23D]">Finalized</p>
+            <form method="post" action="{% url 'game_entry:unfinalize' game.id %}">
+                {% csrf_token %}
+                <button type="submit" class="rounded-full border border-[#3F5847] px-4 py-2 font-scoreboard text-xs uppercase tracking-[0.2em] text-[#8FA090] transition-colors hover:border-[#E8B23D] hover:text-[#E8B23D]">Unfinalize</button>
+            </form>
+            {% else %}
+            <p class="inline-flex rounded-full border border-[#3F5847] bg-[#1A2A21] px-4 py-2 font-scoreboard text-xs uppercase tracking-[0.2em] text-[#8FA090]">In progress</p>
+            <form method="post" action="{% url 'game_entry:add_inning' game.id %}">
+                {% csrf_token %}
+                <button type="submit" class="rounded-full border border-[#3F5847] px-4 py-2 font-scoreboard text-xs uppercase tracking-[0.2em] text-[#8FA090] transition-colors hover:border-[#E8B23D] hover:text-[#E8B23D]">+ Add inning</button>
+            </form>
+            <form method="post" action="{% url 'game_entry:finalize' game.id %}">
+                {% csrf_token %}
+                <button type="submit" class="rounded-full bg-[#E8B23D] px-4 py-2 font-scoreboard text-xs uppercase tracking-[0.2em] text-[#16241B] transition-colors hover:bg-[#F2C463]">Finalize game</button>
+            </form>
+            {% endif %}
+        </div>
     </div>
 
-    {% include 'game_entry/partials/lineup_editor.html' with game=game session=session away_form=away_form home_form=home_form %}
-    {% include 'game_entry/partials/workspace_live_sections.html' with game=game session=session lineup_ready=lineup_ready away_lineup=away_lineup home_lineup=home_lineup state_form=state_form away_substitution_form=away_substitution_form home_substitution_form=home_substitution_form plate_appearances=plate_appearances %}
+    {% include 'game_entry/partials/scoreboard_summary.html' with game=game away_grid=away_grid home_grid=home_grid %}
+
+    {% include 'game_entry/partials/scorecard_grid.html' with game=game scorecard=scorecard team_key='away' grid=away_grid roster=away_roster lineup_slot_range=lineup_slot_range %}
+    <div id="away-play-editor" class="rounded-2xl border border-[#3F5847] bg-[#1A2A21] p-4">
+        {% include 'game_entry/partials/play_form.html' with game=game team_key='away' slot=away_editor.slot form=away_editor.form entry=away_editor.entry inning=away_editor.inning half_inning=away_editor.half_inning is_last=away_editor.is_last runners_before=away_editor.runners_before %}
+    </div>
+
+    {% include 'game_entry/partials/scorecard_grid.html' with game=game scorecard=scorecard team_key='home' grid=home_grid roster=home_roster lineup_slot_range=lineup_slot_range %}
+    <div id="home-play-editor" class="rounded-2xl border border-[#3F5847] bg-[#1A2A21] p-4">
+        {% include 'game_entry/partials/play_form.html' with game=game team_key='home' slot=home_editor.slot form=home_editor.form entry=home_editor.entry inning=home_editor.inning half_inning=home_editor.half_inning is_last=home_editor.is_last runners_before=home_editor.runners_before %}
+    </div>
 </section>
 {% endblock %}
+

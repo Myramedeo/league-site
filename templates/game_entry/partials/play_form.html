@@ -1,0 +1,133 @@
+{% if slot %}
+<h3 class="font-display text-xl uppercase tracking-wide text-[#F2F0E6]">
+    {% if entry %}Edit play — {{ slot.player }}{% else %}Record next play — {{ slot.player }}{% endif %}
+</h3>
+<p class="mt-1 font-scoreboard text-xs uppercase tracking-[0.2em] text-[#8FA090]">
+    Inning {{ inning }} {{ half_inning }}
+    {% if runners_before.0 or runners_before.1 or runners_before.2 %}
+        · Runners on:
+        {% if runners_before.0 %}1st ({{ runners_before.0 }}){% endif %}
+        {% if runners_before.1 %} 2nd ({{ runners_before.1 }}){% endif %}
+        {% if runners_before.2 %} 3rd ({{ runners_before.2 }}){% endif %}
+    {% else %}
+        · Bases empty
+    {% endif %}
+</p>
+
+<form
+    hx-post="{% if entry %}{% url 'game_entry:edit_play' game.id entry.id %}{% else %}{% url 'game_entry:add_play' game.id team_key %}{% endif %}"
+    hx-target="#{{ team_key }}-grid"
+    hx-swap="outerHTML"
+    class="mt-3 space-y-3"
+    x-data="{submitting: false}"
+    x-on:htmx:before-request="submitting = true"
+    x-on:htmx:after-request="submitting = false"
+>
+    {% csrf_token %}
+
+    <div>
+        <label class="mb-1 block text-xs uppercase tracking-[0.2em] text-[#8FA090]" for="{{ form.result.id_for_label }}">Result</label>
+        <select
+            name="result"
+            id="{{ form.result.id_for_label }}"
+            class="w-full rounded-md border border-[#3F5847] bg-[#132119] px-3 py-2 text-sm text-[#F2F0E6] focus:border-[#E8B23D] focus:outline-none"
+            {% if not entry %}
+            hx-get="{% url 'game_entry:add_play' game.id team_key %}"
+            hx-target="#{{ team_key }}-play-editor"
+            hx-swap="innerHTML"
+            hx-trigger="change"
+            hx-include="closest form"
+            {% endif %}
+        >
+            {% for value, label in form.fields.result.choices %}
+            <option value="{{ value }}" {% if form.result.value == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+        <div>
+            <label class="mb-1 block text-xs uppercase tracking-[0.2em] text-[#8FA090]" for="{{ form.outs_recorded.id_for_label }}">Outs on play</label>
+            {{ form.outs_recorded }}
+        </div>
+        <div>
+            <label class="mb-1 block text-xs uppercase tracking-[0.2em] text-[#8FA090]" for="{{ form.rbi.id_for_label }}">RBI</label>
+            {{ form.rbi }}
+        </div>
+    </div>
+
+    <div>
+        <label class="mb-1 block text-xs uppercase tracking-[0.2em] text-[#8FA090]" for="{{ form.batter_ending_base.id_for_label }}">Batter ends up</label>
+        {{ form.batter_ending_base }}
+    </div>
+
+    {% if 'runner_1st_ending' in form.fields %}
+    <div>
+        <label class="mb-1 block text-xs uppercase tracking-[0.2em] text-[#8FA090]" for="{{ form.runner_1st_ending.id_for_label }}">Runner on 1st ({{ runners_before.0 }}) ends up</label>
+        {{ form.runner_1st_ending }}
+    </div>
+    {% endif %}
+    {% if 'runner_2nd_ending' in form.fields %}
+    <div>
+        <label class="mb-1 block text-xs uppercase tracking-[0.2em] text-[#8FA090]" for="{{ form.runner_2nd_ending.id_for_label }}">Runner on 2nd ({{ runners_before.1 }}) ends up</label>
+        {{ form.runner_2nd_ending }}
+    </div>
+    {% endif %}
+    {% if 'runner_3rd_ending' in form.fields %}
+    <div>
+        <label class="mb-1 block text-xs uppercase tracking-[0.2em] text-[#8FA090]" for="{{ form.runner_3rd_ending.id_for_label }}">Runner on 3rd ({{ runners_before.2 }}) ends up</label>
+        {{ form.runner_3rd_ending }}
+    </div>
+    {% endif %}
+
+    <div>
+        <label class="mb-1 block text-xs uppercase tracking-[0.2em] text-[#8FA090]" for="{{ form.notation.id_for_label }}">Notation</label>
+        {{ form.notation }}
+    </div>
+    <div>
+        <label class="mb-1 block text-xs uppercase tracking-[0.2em] text-[#8FA090]" for="{{ form.notes.id_for_label }}">Notes</label>
+        {{ form.notes }}
+    </div>
+
+    {% if form.errors %}
+    <ul class="space-y-1 text-xs text-red-400">
+        {% for field in form %}{% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}{% endfor %}
+        {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+
+    <div class="flex flex-wrap gap-2">
+        <button type="submit" class="rounded-full bg-[#E8B23D] px-4 py-2 text-xs font-scoreboard uppercase tracking-[0.2em] text-[#16241B] transition-colors hover:bg-[#F2C463]" x-bind:disabled="submitting">
+            <span x-show="!submitting">Save</span>
+            <span x-show="submitting" x-cloak>Saving...</span>
+        </button>
+        {% if entry %}
+        <button
+            type="button"
+            hx-get="{% url 'game_entry:add_play' game.id team_key %}"
+            hx-target="#{{ team_key }}-play-editor"
+            hx-swap="innerHTML"
+            class="rounded-full border border-[#3F5847] px-4 py-2 text-xs font-scoreboard uppercase tracking-[0.2em] text-[#8FA090] transition-colors hover:border-[#E8B23D] hover:text-[#E8B23D]"
+        >Cancel</button>
+        {% endif %}
+    </div>
+</form>
+
+{% if entry and is_last %}
+<form
+    hx-post="{% url 'game_entry:delete_play' game.id entry.id %}"
+    hx-target="#{{ team_key }}-grid"
+    hx-swap="outerHTML"
+    hx-confirm="Delete this play?"
+    class="mt-2"
+>
+    {% csrf_token %}
+    <button type="submit" class="rounded-full border border-red-800 px-4 py-2 text-xs font-scoreboard uppercase tracking-[0.2em] text-red-400 transition-colors hover:bg-red-900/20">Delete play</button>
+</form>
+{% elif entry %}
+<p class="mt-2 text-xs text-[#8FA090]">Only the most recent play in this half-inning can be deleted.</p>
+{% endif %}
+
+{% else %}
+<p class="text-sm text-[#8FA090]">Set this team's lineup to begin recording plays.</p>
+{% endif %}

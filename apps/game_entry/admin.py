@@ -1,41 +1,24 @@
 from django.contrib import admin
 
-from .models import LineupSpot, LineupSubstitution, PlateAppearance, ScoringSession, TeamLineup
+from .models import BattingSlot, GameScorecard, ScorecardEntry
 
 
-class LineupSpotInline(admin.TabularInline):
-	model = LineupSpot
+class BattingSlotInline(admin.TabularInline):
+	model = BattingSlot
 	extra = 0
 
 
-@admin.register(TeamLineup)
-class TeamLineupAdmin(admin.ModelAdmin):
-	list_display = ('team', 'session', 'batting_index')
-	list_filter = ('team', 'session__game__season')
-	inlines = [LineupSpotInline]
-
-
-@admin.register(ScoringSession)
-class ScoringSessionAdmin(admin.ModelAdmin):
-	list_display = ('game', 'started_by', 'lineups_locked', 'current_inning', 'half_inning', 'outs', 'created_at')
-	list_filter = ('lineups_locked', 'game__season')
+@admin.register(GameScorecard)
+class GameScorecardAdmin(admin.ModelAdmin):
+	list_display = ('game', 'created_by', 'is_finalized', 'displayed_innings', 'created_at')
+	list_filter = ('is_finalized', 'game__season')
 	search_fields = ('game__home_team__name', 'game__away_team__name')
+	inlines = [BattingSlotInline]
 
 
-@admin.register(PlateAppearance)
-class PlateAppearanceAdmin(admin.ModelAdmin):
-	list_display = ('session', 'inning_number', 'half_inning', 'outs_before', 'offense_team', 'batter', 'result', 'created_at')
-	list_filter = ('result', 'offense_team', 'session__game__season')
-	search_fields = ('batter__first_name', 'batter__last_name', 'notes')
+@admin.register(ScorecardEntry)
+class ScorecardEntryAdmin(admin.ModelAdmin):
+	list_display = ('scorecard', 'team', 'inning', 'half_inning', 'play_index', 'batter', 'result', 'rbi', 'created_at')
+	list_filter = ('result', 'team', 'scorecard__game__season')
+	search_fields = ('slot__player__first_name', 'slot__player__last_name', 'notes', 'notation')
 
-
-@admin.register(LineupSubstitution)
-class LineupSubstitutionAdmin(admin.ModelAdmin):
-	list_display = ('session', 'team', 'batting_order', 'outgoing_player', 'incoming_player', 'created_at')
-	list_filter = ('team', 'session__game__season')
-	search_fields = (
-		'outgoing_player__first_name',
-		'outgoing_player__last_name',
-		'incoming_player__first_name',
-		'incoming_player__last_name',
-	)
