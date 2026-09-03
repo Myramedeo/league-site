@@ -1,0 +1,30 @@
+{% load game_entry_extras %}
+<div id="scoreboard-summary" class="overflow-x-auto rounded-2xl border border-[#3F5847] bg-[#1A2A21] p-4" hx-swap-oob="outerHTML">
+    <table class="w-full min-w-[480px] text-left text-sm text-[#C9CFC3]">
+        <thead>
+            <tr class="font-scoreboard text-xs uppercase tracking-[0.2em] text-[#8FA090]">
+                <th class="py-1 pr-4">Team</th>
+                {% for inning in away_grid.innings %}<th class="px-2 py-1 text-center">{{ inning }}</th>{% endfor %}
+                <th class="px-2 py-1 text-center">R</th>
+                <th class="px-2 py-1 text-center">H</th>
+                <th class="px-2 py-1 text-center">E</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="py-1 pr-4 text-[#F2F0E6]">{{ game.away_team }}</td>
+                {% for inning in away_grid.innings %}<td class="px-2 py-1 text-center">{{ away_grid.inning_runs|get_item:inning|default:'-' }}</td>{% endfor %}
+                <td class="px-2 py-1 text-center font-scoreboard text-[#E8B23D]">{{ away_grid.runs }}</td>
+                <td class="px-2 py-1 text-center">{{ away_grid.hits }}</td>
+                <td class="px-2 py-1 text-center">{{ away_grid.errors }}</td>
+            </tr>
+            <tr>
+                <td class="py-1 pr-4 text-[#F2F0E6]">{{ game.home_team }}</td>
+                {% for inning in home_grid.innings %}<td class="px-2 py-1 text-center">{{ home_grid.inning_runs|get_item:inning|default:'-' }}</td>{% endfor %}
+                <td class="px-2 py-1 text-center font-scoreboard text-[#E8B23D]">{{ home_grid.runs }}</td>
+                <td class="px-2 py-1 text-center">{{ home_grid.hits }}</td>
+                <td class="px-2 py-1 text-center">{{ home_grid.errors }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>

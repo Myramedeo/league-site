@@ -1,0 +1,39 @@
+<tr id="{{ team_key }}-row-{{ order }}" class="{% if is_next %}bg-[#E8B23D]/10{% endif %}">
+    <td class="border-b border-[#33493B] py-2 pr-3">{{ order }}</td>
+    <td class="border-b border-l border-[#33493B] py-2 pr-3 pl-3 text-[#F2F0E6]">
+        {% if form %}
+        <form
+            hx-post="{% url 'game_entry:lineup_slot' game.id team_key order %}"
+            hx-target="#{{ team_key }}-grid"
+            hx-swap="outerHTML"
+            hx-trigger="change"
+        >
+            {% csrf_token %}
+            {{ form.player }}
+        </form>
+        {% else %}
+        {{ slot.player|default:"—" }}
+        {% endif %}
+    </td>
+    {% for cell in cells %}
+    <td class="border-b border-l border-[#33493B] px-2 py-2 text-center">
+        <div class="flex flex-wrap items-center justify-center gap-1">
+            {% for play in cell.plays %}
+            {% include 'game_entry/partials/play_cell.html' with game=game team_key=team_key entry=play scorecard=scorecard %}
+            {% endfor %}
+            {% if cell.show_add %}
+            <button
+                type="button"
+                class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-dashed border-[#E8B23D] text-sm leading-none text-[#E8B23D] transition-colors hover:bg-[#E8B23D]/10"
+                title="Record play for {{ slot.player }}"
+                hx-get="{% url 'game_entry:add_play' game.id team_key %}"
+                hx-target="#{{ team_key }}-play-editor"
+                hx-swap="innerHTML"
+                hx-sync="#{{ team_key }}-play-editor:replace"
+                x-on:click="playModalOpen = true"
+            >+</button>
+            {% endif %}
+        </div>
+    </td>
+    {% endfor %}
+</tr>

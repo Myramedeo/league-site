@@ -1,0 +1,54 @@
+<div id="{{ team_key }}-grid" class="overflow-x-auto rounded-2xl border border-[#3F5847] bg-[#1A2A21] p-4">
+    <div class="mb-4 flex items-center justify-between gap-4">
+        <h2 class="font-display text-2xl uppercase tracking-wide text-[#F2F0E6]">{{ grid.team }}</h2>
+        {% if not scorecard.is_finalized and grid.next_slot %}
+        <div class="flex items-center gap-3">
+            <span class="font-scoreboard text-xs uppercase tracking-[0.2em] text-[#E8B23D]">Up: {{ grid.next_slot.player }}</span>
+            <button
+                type="button"
+                class="rounded-full border border-[#E8B23D] px-3 py-1 font-scoreboard text-xs uppercase tracking-[0.2em] text-[#E8B23D] transition-colors hover:bg-[#E8B23D]/10"
+                hx-get="{% url 'game_entry:add_play' game.id team_key %}"
+                hx-target="#{{ team_key }}-play-editor"
+                hx-swap="innerHTML"
+                hx-sync="#{{ team_key }}-play-editor:replace"
+                x-on:click="playModalOpen = true"
+            >+ Record play</button>
+        </div>
+        {% endif %}
+    </div>
+
+    <table class="w-full min-w-[720px] table-fixed border-collapse text-sm text-[#C9CFC3]">
+        <colgroup>
+            <col class="w-10">
+            <col class="w-36">
+            {% for inning in grid.innings %}<col class="w-16">{% endfor %}
+        </colgroup>
+        <thead>
+            <tr class="font-scoreboard text-xs uppercase tracking-[0.2em] text-[#8FA090]">
+                <th class="border-b border-[#C9CFC3] py-2 pr-3 text-left">#</th>
+                <th class="border-b border-l border-[#C9CFC3] py-2 pr-3 pl-3 text-left">Player</th>
+                {% for inning in grid.innings %}
+                <th class="border-b border-l border-[#C9CFC3] px-2 py-2 text-center">{{ inning }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody id="{{ team_key }}-tbody">
+            {% for row in grid.rows %}
+            {% include 'game_entry/partials/scorecard_row.html' with game=game scorecard=scorecard team_key=team_key order=row.order slot=row.slot form=row.form cells=row.cells is_next=row.is_next %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if not scorecard.is_finalized and grid.next_add_order %}
+    <div class="mt-4" id="{{ team_key }}-add-slot">
+        <button
+            type="button"
+            class="rounded-full border border-[#C9CFC3] px-4 py-2 text-xs font-scoreboard uppercase tracking-[0.2em] text-[#8FA090] transition-colors hover:border-[#E8B23D] hover:text-[#E8B23D]"
+            hx-get="{% url 'game_entry:lineup_slot' game.id team_key grid.next_add_order %}"
+            hx-target="#{{ team_key }}-grid"
+            hx-swap="outerHTML"
+        >+ Add batter</button>
+    </div>
+    {% endif %}
+</div>
+

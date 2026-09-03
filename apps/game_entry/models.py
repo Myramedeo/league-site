@@ -1,51 +1,23 @@
 from django.conf import settings
 from django.db import models
-from django.utils import timezone
 
 from games.models import Game
 from players.models import Player
 from teams.models import Team
 
 
-class ScoringSession(models.Model):
-	HALF_INNING_CHOICES = [
-		('TOP', 'Top'),
-		('BOT', 'Bottom'),
-	]
+class GameScorecard(models.Model):
+	DEFAULT_DISPLAYED_INNINGS = 9
 
-	game = models.OneToOneField(Game, on_delete=models.CASCADE, related_name='scoring_session')
-	started_by = models.ForeignKey(
+	game = models.OneToOneField(Game, on_delete=models.CASCADE, related_name='scorecard')
+	displayed_innings = models.PositiveSmallIntegerField(default=DEFAULT_DISPLAYED_INNINGS)
+	is_finalized = models.BooleanField(default=False)
+	created_by = models.ForeignKey(
 		settings.AUTH_USER_MODEL,
 		on_delete=models.SET_NULL,
 		null=True,
 		blank=True,
-		related_name='started_scoring_sessions',
-	)
-	started_at = models.DateTimeField(null=True, blank=True)
-	lineups_locked = models.BooleanField(default=False)
-	current_inning = models.PositiveSmallIntegerField(default=1)
-	half_inning = models.CharField(max_length=3, choices=HALF_INNING_CHOICES, default='TOP')
-	outs = models.PositiveSmallIntegerField(default=0)
-	first_base_runner = models.ForeignKey(
-		Player,
-		null=True,
-		blank=True,
-		on_delete=models.SET_NULL,
-		related_name='sessions_on_first_base',
-	)
-	second_base_runner = models.ForeignKey(
-		Player,
-		null=True,
-		blank=True,
-		on_delete=models.SET_NULL,
-		related_name='sessions_on_second_base',
-	)
-	third_base_runner = models.ForeignKey(
-		Player,
-		null=True,
-		blank=True,
-		on_delete=models.SET_NULL,
-		related_name='sessions_on_third_base',
+		related_name='created_scorecards',
 	)
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
@@ -54,146 +26,115 @@ class ScoringSession(models.Model):
 		ordering = ['-created_at']
 
 	def __str__(self):
-		return f"Scoring Session: {self.game}"
+		return f"Scorecard: {self.game}"
 
-	@property
-	def has_started(self):
-		return self.started_at is not None or self.plate_appearances.exists()
-
-	def start_scoring(self):
-		if self.started_at:
-			return
-		self.started_at = timezone.now()
-		self.lineups_locked = True
-		self.save(update_fields=['started_at', 'lineups_locked', 'updated_at'])
+	def add_inning(self):
+		self.displayed_innings += 1
+		self.save(update_fields=['displayed_innings', 'updated_at'])
 
 
-class TeamLineup(models.Model):
-	session = models.ForeignKey(ScoringSession, on_delete=models.CASCADE, related_name='team_lineups')
-	team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='scoring_lineups')
-	batting_index = models.PositiveSmallIntegerField(default=0)
+class BattingSlot(models.Model):
+	MAX_ORDER = 12
+
+	scorecard = models.ForeignKey(GameScorecard, on_delete=models.CASCADE, related_name='batting_slots')
+	team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='scorecard_batting_slots')
+	order = models.PositiveSmallIntegerField()
+	player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='batting_slots')
 
 	class Meta:
-		unique_together = ('session', 'team')
-
-	def __str__(self):
-		return f"{self.team} lineup for {self.session.game}"
-
-	@property
-	def batting_order(self):
-		return self.spots.select_related('player').order_by('batting_order')
-
-	@property
-	def current_batter(self):
-		spots = list(self.batting_order)
-		if not spots:
-			return None
-		return spots[self.batting_index % len(spots)].player
-
-	def advance_batter(self):
-		lineup_count = self.spots.count()
-		if lineup_count == 0:
-			return
-		self.batting_index = (self.batting_index + 1) % lineup_count
-		self.save(update_fields=['batting_index'])
-
-
-class LineupSpot(models.Model):
-	team_lineup = models.ForeignKey(TeamLineup, on_delete=models.CASCADE, related_name='spots')
-	player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='lineup_spots')
-	batting_order = models.PositiveSmallIntegerField()
-
-	class Meta:
-		ordering = ['batting_order']
+		ordering = ['team_id', 'order']
 		unique_together = (
-			('team_lineup', 'batting_order'),
-			('team_lineup', 'player'),
+			('scorecard', 'team', 'order'),
+			('scorecard', 'team', 'player'),
 		)
 
 	def __str__(self):
-		return f"{self.team_lineup.team} #{self.batting_order}: {self.player}"
+		return f"{self.team} #{self.order}: {self.player}"
 
 
-class PlateAppearance(models.Model):
-	RESULT_CHOICES = [
-		('1B', 'Single'),
-		('2B', 'Double'),
-		('3B', 'Triple'),
-		('HR', 'Home Run'),
-		('BB', 'Walk'),
-		('K', 'Strikeout'),
-		('OUT', 'Out'),
-		('HBP', 'Hit By Pitch'),
-		('E', 'Reached on Error'),
-		('SAC', 'Sacrifice'),
-		('OTHER', 'Other'),
+class ScorecardEntry(models.Model):
+	HALF_INNING_CHOICES = [
+		('TOP', 'Top'),
+		('BOT', 'Bottom'),
 	]
 
-	session = models.ForeignKey(ScoringSession, on_delete=models.CASCADE, related_name='plate_appearances')
-	lineup = models.ForeignKey(TeamLineup, on_delete=models.CASCADE, related_name='plate_appearances')
-	offense_team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='plate_appearances')
-	batter = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='plate_appearances')
-	inning_number = models.PositiveSmallIntegerField(default=1)
-	half_inning = models.CharField(max_length=3, choices=ScoringSession.HALF_INNING_CHOICES, default='TOP')
-	outs_before = models.PositiveSmallIntegerField(default=0)
-	first_base_runner_before = models.ForeignKey(
-		Player,
-		null=True,
-		blank=True,
-		on_delete=models.SET_NULL,
-		related_name='plate_appearances_first_base_before',
-	)
-	second_base_runner_before = models.ForeignKey(
-		Player,
-		null=True,
-		blank=True,
-		on_delete=models.SET_NULL,
-		related_name='plate_appearances_second_base_before',
-	)
-	third_base_runner_before = models.ForeignKey(
-		Player,
-		null=True,
-		blank=True,
-		on_delete=models.SET_NULL,
-		related_name='plate_appearances_third_base_before',
-	)
+	RESULT_CHOICES = [
+		('1B', '1B'),
+		('2B', '2B'),
+		('3B', '3B'),
+		('HR', 'HR'),
+		('BB', 'BB'),
+		('K', 'K'),
+		('OUT', 'OUT'),
+		('HBP', 'HBP'),
+		('E', 'E'),
+		('FC', 'FC'),
+		('SAC', 'SAC'),
+		('OTHER', 'OTHER'),
+	]
+
+	# Results that count toward a player's hit total.
+	HIT_RESULTS = {'1B', '2B', '3B', 'HR'}
+	# Results that do not count as an official at-bat.
+	NON_AT_BAT_RESULTS = {'BB', 'HBP', 'SAC', 'FC'}
+
+	# Shared vocabulary for "where did this runner/batter end up on this play?" -
+	# reused by batter_ending_base and all three runner_*_ending fields so a single
+	# value (e.g. 'HOME') always means the same thing when tallying runs.
+	BASE_OUTCOME_CHOICES = [
+		('1B', '1st Base'),
+		('2B', '2nd Base'),
+		('3B', '3rd Base'),
+		('HOME', 'Scored'),
+		('OUT', 'Out'),
+	]
+
+	scorecard = models.ForeignKey(GameScorecard, on_delete=models.CASCADE, related_name='entries')
+	slot = models.ForeignKey(BattingSlot, on_delete=models.CASCADE, related_name='entries')
+	team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='scorecard_entries')
+	inning = models.PositiveSmallIntegerField(default=1)
+	half_inning = models.CharField(max_length=3, choices=HALF_INNING_CHOICES, default='TOP')
+	# Order of this play within its (scorecard, team, inning, half_inning) group.
+	play_index = models.PositiveSmallIntegerField(default=1)
+
 	result = models.CharField(max_length=10, choices=RESULT_CHOICES, default='OTHER')
+	outs_recorded = models.PositiveSmallIntegerField(default=0)
+	rbi = models.PositiveSmallIntegerField(default=0)
+	batter_ending_base = models.CharField(max_length=4, choices=BASE_OUTCOME_CHOICES, default='OUT')
+
+	# Runner state is snapshotted from the prior play in this half-inning when the entry is created.
+	runner_1st_before = models.ForeignKey(
+		Player, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+	)
+	runner_1st_ending = models.CharField(max_length=4, choices=BASE_OUTCOME_CHOICES, blank=True)
+	runner_2nd_before = models.ForeignKey(
+		Player, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+	)
+	runner_2nd_ending = models.CharField(max_length=4, choices=BASE_OUTCOME_CHOICES, blank=True)
+	runner_3rd_before = models.ForeignKey(
+		Player, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+	)
+	runner_3rd_ending = models.CharField(max_length=4, choices=BASE_OUTCOME_CHOICES, blank=True)
+
+	notation = models.CharField(max_length=20, blank=True)
 	notes = models.CharField(max_length=255, blank=True)
 	recorded_by = models.ForeignKey(
 		settings.AUTH_USER_MODEL,
 		on_delete=models.SET_NULL,
 		null=True,
 		blank=True,
-		related_name='recorded_plate_appearances',
+		related_name='recorded_scorecard_entries',
 	)
 	created_at = models.DateTimeField(auto_now_add=True)
+	updated_at = models.DateTimeField(auto_now=True)
 
 	class Meta:
-		ordering = ['-created_at']
+		ordering = ['team_id', 'inning', 'half_inning', 'play_index']
+		unique_together = ('scorecard', 'team', 'inning', 'half_inning', 'play_index')
 
 	def __str__(self):
-		return f"{self.batter} {self.get_result_display()} ({self.offense_team})"
+		return f"{self.slot.player} {self.get_result_display()} (inning {self.inning} {self.half_inning})"
 
-
-class LineupSubstitution(models.Model):
-	session = models.ForeignKey(ScoringSession, on_delete=models.CASCADE, related_name='substitutions')
-	lineup = models.ForeignKey(TeamLineup, on_delete=models.CASCADE, related_name='substitutions')
-	team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='lineup_substitutions')
-	batting_order = models.PositiveSmallIntegerField()
-	outgoing_player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='subbed_out_events')
-	incoming_player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='subbed_in_events')
-	notes = models.CharField(max_length=255, blank=True)
-	recorded_by = models.ForeignKey(
-		settings.AUTH_USER_MODEL,
-		on_delete=models.SET_NULL,
-		null=True,
-		blank=True,
-		related_name='recorded_substitutions',
-	)
-	created_at = models.DateTimeField(auto_now_add=True)
-
-	class Meta:
-		ordering = ['-created_at']
-
-	def __str__(self):
-		return f"{self.team} spot {self.batting_order}: {self.outgoing_player} -> {self.incoming_player}"
+	@property
+	def batter(self):
+		return self.slot.player
