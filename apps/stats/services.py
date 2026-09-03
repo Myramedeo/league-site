@@ -22,6 +22,30 @@ def batting_leaderboard(season, min_at_bats=10):
     return sorted(results, key=lambda r: r['batting_average'], reverse=True)
 
 
+def rbi_leaderboard(season):
+    """Returns players sorted by total season RBIs, descending."""
+    lines = (
+        BattingStatLine.objects
+        .filter(game__season=season)
+        .values('player__id', 'player__first_name', 'player__last_name')
+        .annotate(total_rbis=Sum('rbis'))
+    )
+
+    return sorted(lines, key=lambda r: r['total_rbis'], reverse=True)
+
+
+def runs_leaderboard(season):
+    """Returns players sorted by total season runs scored, descending."""
+    lines = (
+        BattingStatLine.objects
+        .filter(game__season=season)
+        .values('player__id', 'player__first_name', 'player__last_name')
+        .annotate(total_runs=Sum('runs'))
+    )
+
+    return sorted(lines, key=lambda r: r['total_runs'], reverse=True)
+
+
 def era_leaderboard(season, min_innings=5):
     """Returns pitchers sorted by season ERA, ascending (lower is better)."""
     lines = (
