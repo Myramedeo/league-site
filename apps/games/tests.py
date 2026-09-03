@@ -122,8 +122,12 @@ class StandingsTests(TestCase):
 
         self.assertEqual(hawks.wins, 1)
         self.assertEqual(hawks.losses, 0)
+        self.assertEqual(hawks.runs_for, 5)
+        self.assertEqual(hawks.runs_against, 2)
         self.assertEqual(owls.wins, 0)
         self.assertEqual(owls.losses, 1)
+        self.assertEqual(owls.runs_for, 2)
+        self.assertEqual(owls.runs_against, 5)
 
     def test_tie_counted_as_half_win(self):
         game = Game.objects.create(

@@ -5,4 +5,6 @@ class TeamStandingSerializer(serializers.Serializer):
     wins = serializers.IntegerField()
     losses = serializers.IntegerField()
     ties = serializers.IntegerField()
+    runs_for = serializers.IntegerField()
+    runs_against = serializers.IntegerField()
     win_pct = serializers.FloatField()

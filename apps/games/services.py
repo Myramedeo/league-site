@@ -7,6 +7,8 @@ class TeamStanding:
         self.wins = 0
         self.losses = 0
         self.ties = 0
+        self.runs_for = 0
+        self.runs_against = 0
 
     @property
     def games_played(self):
@@ -46,6 +48,11 @@ def compute_standings(season):
         home = get_or_create(game.home_team)
         away = get_or_create(game.away_team)
         winner = game.result.winner
+
+        home.runs_for += game.result.home_score
+        home.runs_against += game.result.away_score
+        away.runs_for += game.result.away_score
+        away.runs_against += game.result.home_score
 
         if winner is None:
             home.ties += 1
