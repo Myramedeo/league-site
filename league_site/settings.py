@@ -136,6 +136,7 @@ DATABASES = {
             "DATABASE_URL",
             default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         )
+        , conn_max_age=60
     )
 }
 
