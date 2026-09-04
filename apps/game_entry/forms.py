@@ -11,7 +11,9 @@ class BattingSlotForm(forms.Form):
     def __init__(self, *args, roster_queryset, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['player'].queryset = roster_queryset
-        self.fields['player'].widget.attrs.update({'class': SELECT_STYLE})
+        # autocomplete="off" discourages browsers from restoring stale selected
+        # values over the server-rendered ones when the page is reloaded.
+        self.fields['player'].widget.attrs.update({'class': SELECT_STYLE, 'autocomplete': 'off'})
 
 
 class ScorecardEntryForm(forms.Form):

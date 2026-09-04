@@ -84,7 +84,7 @@ def lineup_slot(request, game_id, team_key, order):
 
 	if request.method == 'POST':
 		roster = _roster_for_team(game, team.id)
-		form = BattingSlotForm(request.POST, roster_queryset=roster)
+		form = BattingSlotForm(request.POST, roster_queryset=roster, prefix=f'{team_key}-{order}')
 		if not form.is_valid():
 			return _render_team_section(request, game, scorecard, team_key, 'Choose a valid player.', 'error')
 
@@ -287,7 +287,7 @@ def _get_game_and_scorecard(game_id, user):
 	return game, scorecard
 
 
-def _build_team_grid(scorecard, team, line_summary, roster, min_visible_rows=DEFAULT_LINEUP_ROWS):
+def _build_team_grid(scorecard, team, team_key, line_summary, roster, min_visible_rows=DEFAULT_LINEUP_ROWS):
 	slots = list(BattingSlot.objects.filter(scorecard=scorecard, team=team).select_related('player').order_by('order'))
 	slots_by_order = {slot.order: slot for slot in slots}
 	entries = list(
@@ -327,9 +327,12 @@ def _build_team_grid(scorecard, team, line_summary, roster, min_visible_rows=DEF
 		]
 		form = None
 		if not scorecard.is_finalized:
+			# Unique prefix per row: without it, all ~18 selects share name="player"/id="id_player",
+			# and browser form-value restoration on reload applies saved values to the wrong rows.
 			form = BattingSlotForm(
 				roster_queryset=roster,
 				initial={'player': slot.player_id} if slot else None,
+				prefix=f'{team_key}-{order}',
 			)
 		rows.append({
 			'order': order, 'slot': slot, 'form': form, 'cells': cells,
@@ -356,10 +359,10 @@ def _build_workspace_context(game, scorecard, away_min_rows=None, home_min_rows=
 	away_roster = _roster_for_team(game, game.away_team_id)
 	home_roster = _roster_for_team(game, game.home_team_id)
 	away_grid = _build_team_grid(
-		scorecard, game.away_team, line_summary['away'], away_roster, away_min_rows or DEFAULT_LINEUP_ROWS,
+		scorecard, game.away_team, 'away', line_summary['away'], away_roster, away_min_rows or DEFAULT_LINEUP_ROWS,
 	)
 	home_grid = _build_team_grid(
-		scorecard, game.home_team, line_summary['home'], home_roster, home_min_rows or DEFAULT_LINEUP_ROWS,
+		scorecard, game.home_team, 'home', line_summary['home'], home_roster, home_min_rows or DEFAULT_LINEUP_ROWS,
 	)
 	away_editor = _build_play_editor_context(game, scorecard, 'away')
 	home_editor = _build_play_editor_context(game, scorecard, 'home')

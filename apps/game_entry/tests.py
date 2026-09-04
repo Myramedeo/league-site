@@ -187,7 +187,7 @@ class ScorecardWorkflowTests(TestCase):
 
     def _set_lineup_slot(self, team_key, order, player):
         url = reverse('game_entry:lineup_slot', args=[self.game.id, team_key, order])
-        return self.client.post(url, {'player': player.id})
+        return self.client.post(url, {f'{team_key}-{order}-player': player.id})
 
     def _set_lineup(self, team_key, players):
         for order, player in enumerate(players, start=1):
@@ -228,6 +228,21 @@ class ScorecardWorkflowTests(TestCase):
                 scorecard__game=self.game, team=self.owls, order=2,
             ).exists()
         )
+
+    def test_workspace_renders_unique_select_ids_with_selected_players(self):
+        self._set_lineup_slot('away', 1, self.away_players[0])
+        self._set_lineup_slot('home', 1, self.home_players[0])
+
+        response = self.client.get(self.workspace_url)
+        content = response.content.decode()
+
+        # Each row's select must have a unique name/id so browser form-value
+        # restoration on reload can't apply one row's value to another row.
+        self.assertContains(response, 'id="id_away-1-player"')
+        self.assertContains(response, 'id="id_home-1-player"')
+        self.assertNotIn('id="id_player"', content)
+        self.assertContains(response, f'<option value="{self.away_players[0].id}" selected>')
+        self.assertContains(response, f'<option value="{self.home_players[0].id}" selected>')
 
     def test_add_play_records_current_batter_and_rotates(self):
         self._set_lineup('away', self.away_players[:2])
