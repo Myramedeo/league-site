@@ -150,6 +150,9 @@ def suggest_outcome(result, runners_before):
 	elif result == 'DP':
 		suggestion['batter_ending_base'] = 'OUT'
 		suggestion['outs_recorded'] = 2
+	elif result == 'SKIP':
+		# A skipped batter advances the lineup without changing the game state.
+		suggestion['batter_ending_base'] = 'OUT'
 	else:  # K, OUT, OTHER
 		suggestion['batter_ending_base'] = 'OUT'
 		suggestion['outs_recorded'] = 1
@@ -213,6 +216,8 @@ def compute_batting_totals(scorecard):
 	)
 	for entry in entries:
 		batter = entry.slot.player
+		if entry.result == 'SKIP':
+			continue
 		stats = totals_for(batter)
 
 		if entry.result not in ScorecardEntry.NON_AT_BAT_RESULTS:

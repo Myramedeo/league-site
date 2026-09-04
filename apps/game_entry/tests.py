@@ -262,6 +262,29 @@ class ScorecardWorkflowTests(TestCase):
         self.assertEqual(second_entry.slot.player, self.away_players[1])
         self.assertEqual(second_entry.play_index, 2)
 
+    def test_skip_batter_advances_lineup_without_affecting_batting_totals(self):
+        self._set_lineup('away', self.away_players[:2])
+
+        response = self._add_play(
+            'away', result='SKIP', outs_recorded=0, rbi=0, batter_ending_base='OUT',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        skipped_entry = ScorecardEntry.objects.get(scorecard__game=self.game)
+        self.assertEqual(skipped_entry.slot.player, self.away_players[0])
+        self.assertEqual(skipped_entry.result, 'SKIP')
+        self.assertEqual(skipped_entry.outs_recorded, 0)
+
+        self._add_play('away', result='1B', outs_recorded=0, rbi=0, batter_ending_base='1B')
+        played_entry = ScorecardEntry.objects.filter(scorecard__game=self.game).latest('id')
+        self.assertEqual(played_entry.slot.player, self.away_players[1])
+
+        self.client.post(reverse('game_entry:finalize', args=[self.game.id]))
+        self.assertFalse(BattingStatLine.objects.filter(player=self.away_players[0], game=self.game).exists())
+        line = BattingStatLine.objects.get(player=self.away_players[1], game=self.game)
+        self.assertEqual(line.at_bats, 1)
+        self.assertEqual(line.hits, 1)
+
     def test_double_play_records_two_outs(self):
         self._set_lineup('away', self.away_players[:2])
 

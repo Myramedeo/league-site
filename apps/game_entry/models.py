@@ -71,13 +71,14 @@ class ScorecardEntry(models.Model):
 		('E', 'E'),
 		('FC', 'FC'),
 		('SAC', 'SAC'),
+		('SKIP', 'N/A'),
 		('OTHER', 'OTHER'),
 	]
 
 	# Results that count toward a player's hit total.
 	HIT_RESULTS = {'1B', '2B', '3B', 'HR'}
 	# Results that do not count as an official at-bat.
-	NON_AT_BAT_RESULTS = {'BB', 'HBP', 'SAC', 'FC'}
+	NON_AT_BAT_RESULTS = {'BB', 'HBP', 'SAC', 'FC', 'SKIP'}
 
 	# Shared vocabulary for "where did this runner/batter end up on this play?" -
 	# reused by batter_ending_base and all three runner_*_ending fields so a single
