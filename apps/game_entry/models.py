@@ -34,7 +34,7 @@ class GameScorecard(models.Model):
 
 
 class BattingSlot(models.Model):
-	MAX_ORDER = 12
+	MAX_ORDER = 14
 
 	scorecard = models.ForeignKey(GameScorecard, on_delete=models.CASCADE, related_name='batting_slots')
 	team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='scorecard_batting_slots')
