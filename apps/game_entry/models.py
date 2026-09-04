@@ -66,6 +66,7 @@ class ScorecardEntry(models.Model):
 		('BB', 'BB'),
 		('K', 'K'),
 		('OUT', 'OUT'),
+		('DP', 'DP'),
 		('HBP', 'HBP'),
 		('E', 'E'),
 		('FC', 'FC'),

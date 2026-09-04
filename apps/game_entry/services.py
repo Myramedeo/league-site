@@ -147,6 +147,9 @@ def suggest_outcome(result, runners_before):
 			suggestion['runner_2nd_ending'] = '3B'
 		elif runner_1st:
 			suggestion['runner_1st_ending'] = '2B'
+	elif result == 'DP':
+		suggestion['batter_ending_base'] = 'OUT'
+		suggestion['outs_recorded'] = 2
 	else:  # K, OUT, OTHER
 		suggestion['batter_ending_base'] = 'OUT'
 		suggestion['outs_recorded'] = 1

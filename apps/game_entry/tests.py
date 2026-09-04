@@ -7,6 +7,7 @@ from players.models import Player, Roster
 from stats.models import BattingStatLine
 from teams.models import Season, Team
 
+from game_entry import services
 from game_entry.models import BattingSlot, GameScorecard, ScorecardEntry
 
 
@@ -245,6 +246,22 @@ class ScorecardWorkflowTests(TestCase):
         second_entry = ScorecardEntry.objects.filter(scorecard__game=self.game).latest('id')
         self.assertEqual(second_entry.slot.player, self.away_players[1])
         self.assertEqual(second_entry.play_index, 2)
+
+    def test_double_play_records_two_outs(self):
+        self._set_lineup('away', self.away_players[:2])
+
+        response = self._add_play('away', result='DP', outs_recorded=2, batter_ending_base='OUT')
+
+        self.assertEqual(response.status_code, 200)
+        entry = ScorecardEntry.objects.get(scorecard__game=self.game)
+        self.assertEqual(entry.result, 'DP')
+        self.assertEqual(entry.outs_recorded, 2)
+
+    def test_double_play_suggests_two_outs(self):
+        suggestion = services.suggest_outcome('DP', (None, None, None))
+
+        self.assertEqual(suggestion['outs_recorded'], 2)
+        self.assertEqual(suggestion['batter_ending_base'], 'OUT')
 
     def test_runner_advancement_and_finalize_credits_runs_rbi_and_hits(self):
         self._set_lineup('away', self.away_players[:2])
