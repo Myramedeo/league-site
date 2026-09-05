@@ -342,6 +342,19 @@ class ScorecardWorkflowTests(TestCase):
         self.assertEqual(line2.runs, 1)
         self.assertEqual(line2.rbis, 2)
 
+    def test_scorecard_marks_a_batter_when_a_later_play_scores_them(self):
+        self._set_lineup('away', self.away_players[:2])
+        self._add_play('away', result='1B', outs_recorded=0, batter_ending_base='1B')
+        self._add_play(
+            'away', result='HR', outs_recorded=0, rbi=2,
+            batter_ending_base='HOME', runner_1st_ending='HOME',
+        )
+
+        response = self.client.get(self.workspace_url)
+
+        self.assertContains(response, '2 RBI')
+        self.assertEqual(response.content.decode().count('>Scored</span>'), 1)
+
     def test_finalize_is_idempotent(self):
         self._set_lineup('away', self.away_players[:1])
         self._add_play('away', result='HR', outs_recorded=0, rbi=1, batter_ending_base='HOME')

@@ -10,4 +10,5 @@
 >
     <span class="font-scoreboard text-[#F2F0E6]">{{ entry.notation|default:entry.get_result_display }}</span>
     {% if entry.rbi %}<span class="text-[10px] text-[#8FA090]">{{ entry.rbi }} RBI</span>{% endif %}
+    {% if entry.scored %}<span class="text-[10px] text-[#8FA090]">Scored</span>{% endif %}
 </button>

@@ -287,6 +287,40 @@ def _get_game_and_scorecard(game_id, user):
 	return game, scorecard
 
 
+def _mark_entries_with_scored_runners(entries):
+	"""Mark each plate appearance whose batter later scores in the same half-inning."""
+	runner_origins = {}
+	current_half_inning = None
+	for entry in entries:
+		half_inning_key = (entry.inning, entry.half_inning)
+		if half_inning_key != current_half_inning:
+			runner_origins = {}
+			current_half_inning = half_inning_key
+
+		entry.scored = False
+		for runner, ending_base in (
+			(entry.runner_1st_before, entry.runner_1st_ending),
+			(entry.runner_2nd_before, entry.runner_2nd_ending),
+			(entry.runner_3rd_before, entry.runner_3rd_ending),
+		):
+			if runner and ending_base == 'HOME':
+				origin = runner_origins.get(runner.id)
+				if origin is not None:
+					origin.scored = True
+
+		next_runner_origins = {}
+		for runner, ending_base in (
+			(entry.runner_1st_before, entry.runner_1st_ending),
+			(entry.runner_2nd_before, entry.runner_2nd_ending),
+			(entry.runner_3rd_before, entry.runner_3rd_ending),
+		):
+			if runner and ending_base in {'1B', '2B', '3B'}:
+				next_runner_origins[runner.id] = runner_origins.get(runner.id)
+		if entry.batter_ending_base in {'1B', '2B', '3B'}:
+			next_runner_origins[entry.slot.player_id] = entry
+		runner_origins = next_runner_origins
+
+
 def _build_team_grid(scorecard, team, team_key, line_summary, roster, min_visible_rows=DEFAULT_LINEUP_ROWS):
 	slots = list(BattingSlot.objects.filter(scorecard=scorecard, team=team).select_related('player').order_by('order'))
 	slots_by_order = {slot.order: slot for slot in slots}
@@ -295,6 +329,7 @@ def _build_team_grid(scorecard, team, team_key, line_summary, roster, min_visibl
 		.select_related('slot__player')
 		.order_by('inning', 'play_index')
 	)
+	_mark_entries_with_scored_runners(entries)
 	max_entry_inning = max((entry.inning for entry in entries), default=0)
 	innings = list(range(1, max(scorecard.displayed_innings, max_entry_inning) + 1))
 
