@@ -52,7 +52,7 @@ def portal(request):
 		.select_related('season', 'home_team', 'away_team', 'result')
 		.order_by('date', 'scheduled_time', 'id')
 	) if season else []
-	completed_statuses = ('F', 'W', 'L', 'T', 'FFT', 'PPD')
+	completed_statuses = ('F', 'W', 'L', 'T', 'FFT', 'PPD', 'CAN')
 	upcoming_games = [game for game in games if game.status not in completed_statuses]
 	completed_games = sorted(
 		(game for game in games if game.status in completed_statuses),

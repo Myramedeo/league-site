@@ -76,12 +76,23 @@ class GameEntryPortalTests(TestCase):
             date='2026-07-20',
             venue='Upcoming Field',
         )
+        cancelled_game = Game.objects.create(
+            season=self.current_season,
+            home_team=self.hawks,
+            away_team=self.owls,
+            date='2026-07-15',
+            venue='Cancelled Field',
+            status='CAN',
+        )
 
         self.client.force_login(self.staff_user)
         response = self.client.get(self.url)
 
         self.assertEqual(list(response.context['upcoming_games']), [upcoming_game])
-        self.assertEqual(list(response.context['completed_games']), [completed_game])
+        self.assertEqual(
+            list(response.context['completed_games']),
+            [cancelled_game, completed_game],
+        )
 
     def test_anonymous_user_redirected_to_admin_login(self):
         response = self.client.get(self.url)

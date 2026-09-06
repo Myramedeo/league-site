@@ -35,7 +35,7 @@ def schedule(request):
         .select_related('home_team', 'away_team', 'result')
         .order_by('date')
     ) if season else []
-    completed_statuses = ('F', 'W', 'L', 'T', 'FFT', 'PPD')
+    completed_statuses = ('F', 'W', 'L', 'T', 'FFT', 'PPD', 'CAN')
     upcoming_games = [g for g in games if g.status not in completed_statuses]
     completed_games = sorted(
         (g for g in games if g.status in completed_statuses),

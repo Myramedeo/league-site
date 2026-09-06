@@ -117,6 +117,23 @@ class HomePageTests(TestCase):
             self.assertContains(response, label)
         self.assertContains(response, reverse('standings'))
 
+    def test_schedule_places_cancelled_games_with_completed_games(self):
+        season = Season.objects.create(year=2026)
+        hawks = Team.objects.create(name='Hawks')
+        bears = Team.objects.create(name='Bears')
+        cancelled_game = Game.objects.create(
+            season=season,
+            home_team=hawks,
+            away_team=bears,
+            date=date(2026, 6, 10),
+            status='CAN',
+        )
+
+        response = self.client.get(reverse('schedule'))
+
+        self.assertEqual(list(response.context['upcoming_games']), [])
+        self.assertEqual(list(response.context['completed_games']), [cancelled_game])
+
 
 class ArticlePageTests(TestCase):
     def setUp(self):
