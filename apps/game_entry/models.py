@@ -78,7 +78,7 @@ class ScorecardEntry(models.Model):
 	# Results that count toward a player's hit total.
 	HIT_RESULTS = {'1B', '2B', '3B', 'HR'}
 	# Results that do not count as an official at-bat.
-	NON_AT_BAT_RESULTS = {'BB', 'HBP', 'SAC', 'FC', 'SKIP'}
+	NON_AT_BAT_RESULTS = {'BB', 'HBP', 'SAC', 'SKIP'}
 
 	scorecard = models.ForeignKey(GameScorecard, on_delete=models.CASCADE, related_name='entries')
 	slot = models.ForeignKey(BattingSlot, on_delete=models.CASCADE, related_name='entries')

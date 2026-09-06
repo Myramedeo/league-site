@@ -300,6 +300,16 @@ class ScorecardWorkflowTests(TestCase):
 
         self.assertEqual(suggestion['outs_recorded'], 2)
 
+    def test_fielder_choice_counts_as_at_bat(self):
+        self._set_lineup('away', self.away_players[:1])
+        self._add_play('away', result='FC', outs_recorded=1)
+
+        self.client.post(reverse('game_entry:finalize', args=[self.game.id]))
+
+        line = BattingStatLine.objects.get(player=self.away_players[0], game=self.game)
+        self.assertEqual(line.at_bats, 1)
+        self.assertEqual(line.reached_on_error, 0)
+
     def test_runner_advancement_and_finalize_credits_runs_rbi_and_hits(self):
         self._set_lineup('away', self.away_players[:2])
 

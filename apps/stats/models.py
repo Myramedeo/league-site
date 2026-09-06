@@ -42,10 +42,10 @@ class BattingStatLine(models.Model):
     
     @property
     def on_base_percentage(self):
-        plate_appearances = self.at_bats + self.walks
+        plate_appearances = self.at_bats + self.walks + self.hit_by_pitch + self.sacrifices
         if not plate_appearances:
             return 0.0
-        return round((self.hits + self.walks) / plate_appearances, 3)
+        return round((self.hits + self.walks + self.hit_by_pitch) / plate_appearances, 3)
 
     def __str__(self):
         return f"{self.player} — {self.game}"

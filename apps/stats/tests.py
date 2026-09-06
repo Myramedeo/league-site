@@ -2,6 +2,8 @@ from django.test import TestCase
 from teams.models import Season, Team
 from games.models import Game, GameResult
 from games.services import compute_standings
+from players.models import Player
+from stats.models import BattingStatLine
 
 class StandingsTests(TestCase):
     def setUp(self):
@@ -71,4 +73,31 @@ class StandingsTests(TestCase):
         self.assertEqual(hawks.losses, 1)
         self.assertEqual(owls.wins, 1)
         self.assertEqual(owls.losses, 2)
+
+
+class BattingStatLineTests(TestCase):
+    def setUp(self):
+        self.season = Season.objects.create(year=2026)
+        self.team_a = Team.objects.create(name='Hawks')
+        self.team_b = Team.objects.create(name='Owls')
+
+    def test_on_base_percentage_includes_walks_hit_by_pitch_and_sacrifices(self):
+        player = Player.objects.create(first_name='Casey', last_name='Batter')
+        game = Game.objects.create(
+            season=self.season,
+            home_team=self.team_a,
+            away_team=self.team_b,
+            date='2026-06-03',
+        )
+        line = BattingStatLine.objects.create(
+            player=player,
+            game=game,
+            at_bats=6,
+            hits=2,
+            walks=1,
+            hit_by_pitch=1,
+            sacrifices=1,
+        )
+
+        self.assertEqual(line.on_base_percentage, 0.444)
 
