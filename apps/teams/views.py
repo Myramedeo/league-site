@@ -1,5 +1,7 @@
+from django.db.models import Prefetch
 from django.shortcuts import render, get_object_or_404
 from core.utils import get_selected_season
+from players.models import Roster
 from .models import Team, Season
 
 from rest_framework import viewsets
@@ -16,7 +18,13 @@ class SeasonViewSet(viewsets.ReadOnlyModelViewSet):
 def team_list(request):
     season = get_selected_season(request)
     teams = (
-        Team.objects.filter(seasons=season).order_by('name').distinct()
+        Team.objects.filter(seasons=season).order_by('name').distinct().prefetch_related(
+            Prefetch(
+                'roster_set',
+                queryset=Roster.objects.filter(season=season).select_related('player').order_by('player__last_name', 'player__first_name'),
+                to_attr='season_roster',
+            )
+        )
         if season else Team.objects.none()
     )
     return render(request, 'teams/team_list.html', {
