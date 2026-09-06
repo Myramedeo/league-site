@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404, render
 from rest_framework import viewsets
+from game_entry.models import BattingSlot
 from players.models import Roster
 from stats.models import BattingStatLine
 from .models import Game
@@ -15,6 +16,20 @@ class GameViewSet(viewsets.ReadOnlyModelViewSet):
         if season_id:
             qs = qs.filter(season_id=season_id)
         return qs
+
+
+def _order_lines_by_lineup(lines, game, team_id):
+    player_ids = [line.player_id for line in lines]
+    lineup_orders = dict(
+        BattingSlot.objects.filter(
+            scorecard__game=game,
+            team_id=team_id,
+            player_id__in=player_ids,
+        ).values_list('player_id', 'order')
+    )
+    if len(lineup_orders) != len(lines):
+        return lines
+    return sorted(lines, key=lambda line: lineup_orders[line.player_id])
 
 
 def game_detail(request, game_id):
@@ -45,6 +60,8 @@ def game_detail(request, game_id):
         return home_lines, away_lines
 
     home_batting_lines, away_batting_lines = split_lines(batting_lines)
+    home_batting_lines = _order_lines_by_lineup(home_batting_lines, game, game.home_team_id)
+    away_batting_lines = _order_lines_by_lineup(away_batting_lines, game, game.away_team_id)
 
     home_runs = [int(run) for run in (result.home_runs if result else [])]
     away_runs = [int(run) for run in (result.away_runs if result else [])]

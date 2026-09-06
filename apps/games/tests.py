@@ -4,6 +4,9 @@ from types import SimpleNamespace
 from django.contrib import admin
 from django.test import TestCase
 from django.urls import reverse
+from game_entry.models import BattingSlot, GameScorecard
+from players.models import Player, Roster
+from stats.models import BattingStatLine
 from teams.models import Season, Team
 from games.admin import InningScoreInline
 from games.models import Game, GameResult, InningScore
@@ -74,6 +77,30 @@ class GameResultTests(TestCase):
         self.assertContains(response, 'Main Field')
         self.assertEqual(response.context['result'].home_score, 1)
         self.assertEqual(response.context['result'].away_score, 1)
+
+    def test_game_detail_orders_batting_lines_by_existing_lineup(self):
+        game = Game.objects.create(
+            season=self.season, home_team=self.team_a,
+            away_team=self.team_b, date="2026-06-11",
+        )
+        self.create_result(game, [0], [0], final_home_score=0, final_away_score=0)
+        first_batter = Player.objects.create(first_name='Zoe', last_name='Alpha')
+        second_batter = Player.objects.create(first_name='Amy', last_name='Zulu')
+        Roster.objects.create(player=first_batter, team=self.team_b, season=self.season)
+        Roster.objects.create(player=second_batter, team=self.team_b, season=self.season)
+        BattingStatLine.objects.create(player=first_batter, game=game)
+        BattingStatLine.objects.create(player=second_batter, game=game)
+
+        scorecard = GameScorecard.objects.create(game=game)
+        BattingSlot.objects.create(scorecard=scorecard, team=self.team_b, order=1, player=second_batter)
+        BattingSlot.objects.create(scorecard=scorecard, team=self.team_b, order=2, player=first_batter)
+
+        response = self.client.get(reverse('game_detail', args=[game.id]))
+
+        self.assertEqual(
+            [line.player for line in response.context['away_batting_lines']],
+            [second_batter, first_batter],
+        )
 
     def test_game_detail_page_renders_scheduled_game_without_result(self):
         game = Game.objects.create(
