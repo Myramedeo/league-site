@@ -199,7 +199,7 @@ class ScorecardWorkflowTests(TestCase):
             'result': 'OUT',
             'outs_recorded': 1,
             'rbi': 0,
-            'batter_ending_base': 'OUT',
+            'scored': False,
             'notation': '',
             'notes': '',
         }
@@ -247,7 +247,7 @@ class ScorecardWorkflowTests(TestCase):
     def test_add_play_records_current_batter_and_rotates(self):
         self._set_lineup('away', self.away_players[:2])
 
-        response = self._add_play('away', result='BB', outs_recorded=0, rbi=0, batter_ending_base='1B')
+        response = self._add_play('away', result='BB', outs_recorded=0, rbi=0)
         self.assertEqual(response.status_code, 200)
 
         entry = ScorecardEntry.objects.get(scorecard__game=self.game)
@@ -257,7 +257,7 @@ class ScorecardWorkflowTests(TestCase):
         self.assertEqual(entry.play_index, 1)
 
         # Second plate appearance should go to the next slot in the order.
-        self._add_play('away', result='K', outs_recorded=1, rbi=0, batter_ending_base='OUT')
+        self._add_play('away', result='K', outs_recorded=1, rbi=0)
         second_entry = ScorecardEntry.objects.filter(scorecard__game=self.game).latest('id')
         self.assertEqual(second_entry.slot.player, self.away_players[1])
         self.assertEqual(second_entry.play_index, 2)
@@ -266,7 +266,7 @@ class ScorecardWorkflowTests(TestCase):
         self._set_lineup('away', self.away_players[:2])
 
         response = self._add_play(
-            'away', result='SKIP', outs_recorded=0, rbi=0, batter_ending_base='OUT',
+            'away', result='SKIP', outs_recorded=0, rbi=0,
         )
 
         self.assertEqual(response.status_code, 200)
@@ -275,7 +275,7 @@ class ScorecardWorkflowTests(TestCase):
         self.assertEqual(skipped_entry.result, 'SKIP')
         self.assertEqual(skipped_entry.outs_recorded, 0)
 
-        self._add_play('away', result='1B', outs_recorded=0, rbi=0, batter_ending_base='1B')
+        self._add_play('away', result='1B', outs_recorded=0, rbi=0)
         played_entry = ScorecardEntry.objects.filter(scorecard__game=self.game).latest('id')
         self.assertEqual(played_entry.slot.player, self.away_players[1])
 
@@ -288,7 +288,7 @@ class ScorecardWorkflowTests(TestCase):
     def test_double_play_records_two_outs(self):
         self._set_lineup('away', self.away_players[:2])
 
-        response = self._add_play('away', result='DP', outs_recorded=2, batter_ending_base='OUT')
+        response = self._add_play('away', result='DP', outs_recorded=2)
 
         self.assertEqual(response.status_code, 200)
         entry = ScorecardEntry.objects.get(scorecard__game=self.game)
@@ -296,22 +296,25 @@ class ScorecardWorkflowTests(TestCase):
         self.assertEqual(entry.outs_recorded, 2)
 
     def test_double_play_suggests_two_outs(self):
-        suggestion = services.suggest_outcome('DP', (None, None, None))
+        suggestion = services.suggest_outcome('DP')
 
         self.assertEqual(suggestion['outs_recorded'], 2)
-        self.assertEqual(suggestion['batter_ending_base'], 'OUT')
 
     def test_runner_advancement_and_finalize_credits_runs_rbi_and_hits(self):
         self._set_lineup('away', self.away_players[:2])
 
-        # Player 1 singles; bases empty before, so no runner fields needed.
-        self._add_play('away', result='1B', outs_recorded=0, rbi=0, batter_ending_base='1B')
+        # Player 1 singles and does not yet score.
+        self._add_play('away', result='1B', outs_recorded=0, rbi=0)
 
-        # Player 2 homers, driving in the runner on 1st and scoring himself.
-        self._add_play(
-            'away', result='HR', outs_recorded=0, rbi=2,
-            batter_ending_base='HOME', runner_1st_ending='HOME',
-        )
+        # Player 2 homers, driving in player 1 and scoring himself.
+        self._add_play('away', result='HR', outs_recorded=0, rbi=2, scored=True)
+
+        # Player 1 already scored on player 2's homer; go back and mark their row.
+        first_entry = ScorecardEntry.objects.filter(scorecard__game=self.game).earliest('id')
+        edit_url = reverse('game_entry:edit_play', args=[self.game.id, first_entry.id])
+        self.client.post(edit_url, {
+            'result': '1B', 'outs_recorded': 0, 'rbi': 0, 'scored': True, 'notation': '', 'notes': '',
+        })
 
         finalize_url = reverse('game_entry:finalize', args=[self.game.id])
         response = self.client.post(finalize_url)
@@ -342,22 +345,19 @@ class ScorecardWorkflowTests(TestCase):
         self.assertEqual(line2.runs, 1)
         self.assertEqual(line2.rbis, 2)
 
-    def test_scorecard_marks_a_batter_when_a_later_play_scores_them(self):
+    def test_scorecard_shows_rbi_and_scored_badges(self):
         self._set_lineup('away', self.away_players[:2])
-        self._add_play('away', result='1B', outs_recorded=0, batter_ending_base='1B')
-        self._add_play(
-            'away', result='HR', outs_recorded=0, rbi=2,
-            batter_ending_base='HOME', runner_1st_ending='HOME',
-        )
+        self._add_play('away', result='1B', outs_recorded=0, scored=True)
+        self._add_play('away', result='HR', outs_recorded=0, rbi=2, scored=True)
 
         response = self.client.get(self.workspace_url)
 
         self.assertContains(response, '2 RBI')
-        self.assertEqual(response.content.decode().count('>Scored</span>'), 1)
+        self.assertEqual(response.content.decode().count('>Scored</span>'), 2)
 
     def test_finalize_is_idempotent(self):
         self._set_lineup('away', self.away_players[:1])
-        self._add_play('away', result='HR', outs_recorded=0, rbi=1, batter_ending_base='HOME')
+        self._add_play('away', result='HR', outs_recorded=0, rbi=1, scored=True)
 
         finalize_url = reverse('game_entry:finalize', args=[self.game.id])
         self.client.post(finalize_url)
@@ -370,8 +370,8 @@ class ScorecardWorkflowTests(TestCase):
 
     def test_only_last_play_in_half_inning_can_be_deleted(self):
         self._set_lineup('away', self.away_players[:2])
-        self._add_play('away', result='1B', outs_recorded=0, rbi=0, batter_ending_base='1B')
-        self._add_play('away', result='K', outs_recorded=1, rbi=0, batter_ending_base='OUT')
+        self._add_play('away', result='1B', outs_recorded=0, rbi=0)
+        self._add_play('away', result='K', outs_recorded=1, rbi=0)
 
         first_entry, second_entry = ScorecardEntry.objects.filter(scorecard__game=self.game).order_by('play_index')
 
@@ -385,18 +385,18 @@ class ScorecardWorkflowTests(TestCase):
 
     def test_finalized_game_blocks_lineup_and_play_edits(self):
         self._set_lineup('away', self.away_players[:1])
-        self._add_play('away', result='OUT', outs_recorded=1, rbi=0, batter_ending_base='OUT')
+        self._add_play('away', result='OUT', outs_recorded=1, rbi=0)
 
         finalize_url = reverse('game_entry:finalize', args=[self.game.id])
         self.client.post(finalize_url)
 
-        response = self._add_play('away', result='1B', outs_recorded=0, rbi=0, batter_ending_base='1B')
+        response = self._add_play('away', result='1B', outs_recorded=0, rbi=0)
         self.assertContains(response, 'Unfinalize the game')
         self.assertEqual(ScorecardEntry.objects.filter(scorecard__game=self.game).count(), 1)
 
     def test_unfinalize_allows_editing_again(self):
         self._set_lineup('away', self.away_players[:1])
-        self._add_play('away', result='OUT', outs_recorded=1, rbi=0, batter_ending_base='OUT')
+        self._add_play('away', result='OUT', outs_recorded=1, rbi=0)
 
         finalize_url = reverse('game_entry:finalize', args=[self.game.id])
         self.client.post(finalize_url)
@@ -407,6 +407,6 @@ class ScorecardWorkflowTests(TestCase):
         scorecard = GameScorecard.objects.get(game=self.game)
         self.assertFalse(scorecard.is_finalized)
 
-        response = self._add_play('away', result='K', outs_recorded=1, rbi=0, batter_ending_base='OUT')
+        response = self._add_play('away', result='K', outs_recorded=1, rbi=0)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(ScorecardEntry.objects.filter(scorecard__game=self.game).count(), 2)

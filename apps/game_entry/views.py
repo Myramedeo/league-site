@@ -119,9 +119,7 @@ def add_play(request, game_id, team_key):
 			return _render_team_section(request, game, scorecard, team_key, "Set this team's lineup before recording plays.", 'error')
 
 		inning, half_inning = services.current_inning_for_team(scorecard, team)
-		runner_1st, runner_2nd, runner_3rd, _ = services.derive_base_state(scorecard, team, inning, half_inning)
-		runners_before = (runner_1st, runner_2nd, runner_3rd)
-		form = ScorecardEntryForm(request.POST, runners_before=runners_before)
+		form = ScorecardEntryForm(request.POST)
 		if form.is_valid():
 			play_index = services.next_play_index(scorecard, team, inning, half_inning)
 			ScorecardEntry.objects.create(
@@ -130,10 +128,7 @@ def add_play(request, game_id, team_key):
 				result=form.cleaned_data['result'],
 				outs_recorded=form.cleaned_data['outs_recorded'],
 				rbi=form.cleaned_data['rbi'],
-				batter_ending_base=form.cleaned_data['batter_ending_base'],
-				runner_1st_before=runner_1st, runner_1st_ending=form.cleaned_data.get('runner_1st_ending', ''),
-				runner_2nd_before=runner_2nd, runner_2nd_ending=form.cleaned_data.get('runner_2nd_ending', ''),
-				runner_3rd_before=runner_3rd, runner_3rd_ending=form.cleaned_data.get('runner_3rd_ending', ''),
+				scored=form.cleaned_data['scored'],
 				notation=form.cleaned_data['notation'],
 				notes=form.cleaned_data['notes'],
 				recorded_by=request.user,
@@ -143,7 +138,6 @@ def add_play(request, game_id, team_key):
 		editor_ctx = {
 			'team_key': team_key, 'slot': slot, 'form': form, 'entry': None,
 			'inning': inning, 'half_inning': half_inning, 'is_last': False,
-			'runners_before': runners_before,
 		}
 		return _render_team_section(request, game, scorecard, team_key, 'Fix the errors below.', 'error', editor_ctx=editor_ctx)
 
@@ -155,7 +149,7 @@ def add_play(request, game_id, team_key):
 def edit_play(request, game_id, entry_id):
 	game, scorecard = _get_game_and_scorecard(game_id, request.user)
 	entry = get_object_or_404(
-		ScorecardEntry.objects.select_related('slot__player', 'runner_1st_before', 'runner_2nd_before', 'runner_3rd_before'),
+		ScorecardEntry.objects.select_related('slot__player'),
 		id=entry_id, scorecard=scorecard,
 	)
 	team_key = 'away' if entry.team_id == game.away_team_id else 'home'
@@ -163,18 +157,13 @@ def edit_play(request, game_id, entry_id):
 	if scorecard.is_finalized:
 		return _render_team_section(request, game, scorecard, team_key, 'Unfinalize the game before editing plays.', 'error')
 
-	runners_before = (entry.runner_1st_before, entry.runner_2nd_before, entry.runner_3rd_before)
-
 	if request.method == 'POST':
-		form = ScorecardEntryForm(request.POST, runners_before=runners_before)
+		form = ScorecardEntryForm(request.POST)
 		if form.is_valid():
 			entry.result = form.cleaned_data['result']
 			entry.outs_recorded = form.cleaned_data['outs_recorded']
 			entry.rbi = form.cleaned_data['rbi']
-			entry.batter_ending_base = form.cleaned_data['batter_ending_base']
-			entry.runner_1st_ending = form.cleaned_data.get('runner_1st_ending', '')
-			entry.runner_2nd_ending = form.cleaned_data.get('runner_2nd_ending', '')
-			entry.runner_3rd_ending = form.cleaned_data.get('runner_3rd_ending', '')
+			entry.scored = form.cleaned_data['scored']
 			entry.notation = form.cleaned_data['notation']
 			entry.notes = form.cleaned_data['notes']
 			entry.save()
@@ -186,7 +175,6 @@ def edit_play(request, game_id, entry_id):
 			'team_key': team_key, 'slot': entry.slot, 'form': form, 'entry': entry,
 			'inning': entry.inning, 'half_inning': entry.half_inning,
 			'is_last': services.is_last_play_in_half_inning(entry),
-			'runners_before': runners_before,
 		}
 		return _render_team_section(request, game, scorecard, team_key, 'Fix the errors below.', 'error', editor_ctx=editor_ctx)
 
@@ -287,40 +275,6 @@ def _get_game_and_scorecard(game_id, user):
 	return game, scorecard
 
 
-def _mark_entries_with_scored_runners(entries):
-	"""Mark each plate appearance whose batter later scores in the same half-inning."""
-	runner_origins = {}
-	current_half_inning = None
-	for entry in entries:
-		half_inning_key = (entry.inning, entry.half_inning)
-		if half_inning_key != current_half_inning:
-			runner_origins = {}
-			current_half_inning = half_inning_key
-
-		entry.scored = False
-		for runner, ending_base in (
-			(entry.runner_1st_before, entry.runner_1st_ending),
-			(entry.runner_2nd_before, entry.runner_2nd_ending),
-			(entry.runner_3rd_before, entry.runner_3rd_ending),
-		):
-			if runner and ending_base == 'HOME':
-				origin = runner_origins.get(runner.id)
-				if origin is not None:
-					origin.scored = True
-
-		next_runner_origins = {}
-		for runner, ending_base in (
-			(entry.runner_1st_before, entry.runner_1st_ending),
-			(entry.runner_2nd_before, entry.runner_2nd_ending),
-			(entry.runner_3rd_before, entry.runner_3rd_ending),
-		):
-			if runner and ending_base in {'1B', '2B', '3B'}:
-				next_runner_origins[runner.id] = runner_origins.get(runner.id)
-		if entry.batter_ending_base in {'1B', '2B', '3B'}:
-			next_runner_origins[entry.slot.player_id] = entry
-		runner_origins = next_runner_origins
-
-
 def _build_team_grid(scorecard, team, team_key, line_summary, roster, min_visible_rows=DEFAULT_LINEUP_ROWS):
 	slots = list(BattingSlot.objects.filter(scorecard=scorecard, team=team).select_related('player').order_by('order'))
 	slots_by_order = {slot.order: slot for slot in slots}
@@ -329,7 +283,6 @@ def _build_team_grid(scorecard, team, team_key, line_summary, roster, min_visibl
 		.select_related('slot__player')
 		.order_by('inning', 'play_index')
 	)
-	_mark_entries_with_scored_runners(entries)
 	max_entry_inning = max((entry.inning for entry in entries), default=0)
 	innings = list(range(1, max(scorecard.displayed_innings, max_entry_inning) + 1))
 
@@ -420,12 +373,9 @@ def _build_play_editor_context(game, scorecard, team_key, selected_result=None, 
 	if entry is not None:
 		slot = entry.slot
 		inning, half_inning = entry.inning, entry.half_inning
-		runners_before = (entry.runner_1st_before, entry.runner_2nd_before, entry.runner_3rd_before)
 		initial = {
 			'result': entry.result, 'outs_recorded': entry.outs_recorded, 'rbi': entry.rbi,
-			'batter_ending_base': entry.batter_ending_base,
-			'runner_1st_ending': entry.runner_1st_ending, 'runner_2nd_ending': entry.runner_2nd_ending,
-			'runner_3rd_ending': entry.runner_3rd_ending, 'notation': entry.notation, 'notes': entry.notes,
+			'scored': entry.scored, 'notation': entry.notation, 'notes': entry.notes,
 		}
 		is_last = services.is_last_play_in_half_inning(entry)
 	else:
@@ -433,18 +383,15 @@ def _build_play_editor_context(game, scorecard, team_key, selected_result=None, 
 		if not slot:
 			return {'team_key': team_key, 'slot': None, 'form': None, 'entry': None}
 		inning, half_inning = services.current_inning_for_team(scorecard, team)
-		runner_1st, runner_2nd, runner_3rd, _ = services.derive_base_state(scorecard, team, inning, half_inning)
-		runners_before = (runner_1st, runner_2nd, runner_3rd)
 		result = selected_result or 'OUT'
-		initial = services.suggest_outcome(result, runners_before)
+		initial = services.suggest_outcome(result)
 		initial['result'] = result
 		is_last = False
 
-	form = ScorecardEntryForm(initial=initial, runners_before=runners_before)
+	form = ScorecardEntryForm(initial=initial)
 	return {
 		'team_key': team_key, 'slot': slot, 'form': form, 'entry': entry,
 		'inning': inning, 'half_inning': half_inning, 'is_last': is_last,
-		'runners_before': runners_before,
 	}
 
 

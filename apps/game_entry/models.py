@@ -80,17 +80,6 @@ class ScorecardEntry(models.Model):
 	# Results that do not count as an official at-bat.
 	NON_AT_BAT_RESULTS = {'BB', 'HBP', 'SAC', 'FC', 'SKIP'}
 
-	# Shared vocabulary for "where did this runner/batter end up on this play?" -
-	# reused by batter_ending_base and all three runner_*_ending fields so a single
-	# value (e.g. 'HOME') always means the same thing when tallying runs.
-	BASE_OUTCOME_CHOICES = [
-		('1B', '1st Base'),
-		('2B', '2nd Base'),
-		('3B', '3rd Base'),
-		('HOME', 'Scored'),
-		('OUT', 'Out'),
-	]
-
 	scorecard = models.ForeignKey(GameScorecard, on_delete=models.CASCADE, related_name='entries')
 	slot = models.ForeignKey(BattingSlot, on_delete=models.CASCADE, related_name='entries')
 	team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='scorecard_entries')
@@ -102,21 +91,8 @@ class ScorecardEntry(models.Model):
 	result = models.CharField(max_length=10, choices=RESULT_CHOICES, default='OTHER')
 	outs_recorded = models.PositiveSmallIntegerField(default=0)
 	rbi = models.PositiveSmallIntegerField(default=0)
-	batter_ending_base = models.CharField(max_length=4, choices=BASE_OUTCOME_CHOICES, default='OUT')
-
-	# Runner state is snapshotted from the prior play in this half-inning when the entry is created.
-	runner_1st_before = models.ForeignKey(
-		Player, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
-	)
-	runner_1st_ending = models.CharField(max_length=4, choices=BASE_OUTCOME_CHOICES, blank=True)
-	runner_2nd_before = models.ForeignKey(
-		Player, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
-	)
-	runner_2nd_ending = models.CharField(max_length=4, choices=BASE_OUTCOME_CHOICES, blank=True)
-	runner_3rd_before = models.ForeignKey(
-		Player, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
-	)
-	runner_3rd_ending = models.CharField(max_length=4, choices=BASE_OUTCOME_CHOICES, blank=True)
+	# Whether this batter crossed home plate, set whenever it actually happens (may be on a later play).
+	scored = models.BooleanField(default=False)
 
 	notation = models.CharField(max_length=20, blank=True)
 	notes = models.CharField(max_length=255, blank=True)
