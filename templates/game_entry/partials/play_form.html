@@ -4,14 +4,6 @@
 </h3>
 <p class="mt-1 font-scoreboard text-xs uppercase tracking-[0.2em] text-[#8FA090]">
     Inning {{ inning }} {{ half_inning }}
-    {% if runners_before.0 or runners_before.1 or runners_before.2 %}
-        · Runners on:
-        {% if runners_before.0 %}1st ({{ runners_before.0 }}){% endif %}
-        {% if runners_before.1 %} 2nd ({{ runners_before.1 }}){% endif %}
-        {% if runners_before.2 %} 3rd ({{ runners_before.2 }}){% endif %}
-    {% else %}
-        · Bases empty
-    {% endif %}
 </p>
 
 <form
@@ -62,29 +54,10 @@
         </div>
     </div>
 
-    <div>
-        <label class="mb-1 block text-xs uppercase tracking-[0.2em] text-[#8FA090]" for="{{ form.batter_ending_base.id_for_label }}">Batter ends up</label>
-        {{ form.batter_ending_base }}
+    <div class="flex items-center gap-2">
+        {{ form.scored }}
+        <label class="text-xs uppercase tracking-[0.2em] text-[#8FA090]" for="{{ form.scored.id_for_label }}">Player scored</label>
     </div>
-
-    {% if 'runner_1st_ending' in form.fields %}
-    <div>
-        <label class="mb-1 block text-xs uppercase tracking-[0.2em] text-[#8FA090]" for="{{ form.runner_1st_ending.id_for_label }}">Runner on 1st ({{ runners_before.0 }}) ends up</label>
-        {{ form.runner_1st_ending }}
-    </div>
-    {% endif %}
-    {% if 'runner_2nd_ending' in form.fields %}
-    <div>
-        <label class="mb-1 block text-xs uppercase tracking-[0.2em] text-[#8FA090]" for="{{ form.runner_2nd_ending.id_for_label }}">Runner on 2nd ({{ runners_before.1 }}) ends up</label>
-        {{ form.runner_2nd_ending }}
-    </div>
-    {% endif %}
-    {% if 'runner_3rd_ending' in form.fields %}
-    <div>
-        <label class="mb-1 block text-xs uppercase tracking-[0.2em] text-[#8FA090]" for="{{ form.runner_3rd_ending.id_for_label }}">Runner on 3rd ({{ runners_before.2 }}) ends up</label>
-        {{ form.runner_3rd_ending }}
-    </div>
-    {% endif %}
 
     {% if form.errors %}
     <ul class="space-y-1 text-xs text-red-400">

@@ -20,29 +20,14 @@ class ScorecardEntryForm(forms.Form):
     result = forms.ChoiceField(choices=ScorecardEntry.RESULT_CHOICES)
     outs_recorded = forms.IntegerField(min_value=0, max_value=3)
     rbi = forms.IntegerField(min_value=0, max_value=4)
-    batter_ending_base = forms.ChoiceField(choices=ScorecardEntry.BASE_OUTCOME_CHOICES)
-    runner_1st_ending = forms.ChoiceField(
-        choices=[('', 'No runner')] + ScorecardEntry.BASE_OUTCOME_CHOICES, required=False,
-    )
-    runner_2nd_ending = forms.ChoiceField(
-        choices=[('', 'No runner')] + ScorecardEntry.BASE_OUTCOME_CHOICES, required=False,
-    )
-    runner_3rd_ending = forms.ChoiceField(
-        choices=[('', 'No runner')] + ScorecardEntry.BASE_OUTCOME_CHOICES, required=False,
-    )
+    scored = forms.BooleanField(required=False)
     notation = forms.CharField(max_length=20, required=False)
     notes = forms.CharField(max_length=255, required=False)
 
-    def __init__(self, *args, runners_before, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        runner_1st, runner_2nd, runner_3rd = runners_before
-        for field_name in self.fields:
-            self.fields[field_name].widget.attrs.update({'class': SELECT_STYLE})
-        # Only show a runner's ending-base field when that base was actually occupied.
-        if not runner_1st:
-            del self.fields['runner_1st_ending']
-        if not runner_2nd:
-            del self.fields['runner_2nd_ending']
-        if not runner_3rd:
-            del self.fields['runner_3rd_ending']
+        for field_name, field in self.fields.items():
+            if field_name != 'scored':
+                field.widget.attrs.update({'class': SELECT_STYLE})
+
 

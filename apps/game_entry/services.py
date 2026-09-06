@@ -26,7 +26,7 @@ def current_inning_for_team(scorecard, team):
 	)
 	if not last_entry:
 		return 1, half_inning
-	_, _, _, outs = derive_base_state(scorecard, team, last_entry.inning, half_inning)
+	outs = outs_recorded_for_half_inning(scorecard, team, last_entry.inning, half_inning)
 	if outs >= 3:
 		return last_entry.inning + 1, half_inning
 	return last_entry.inning, half_inning
@@ -47,121 +47,27 @@ def next_play_index(scorecard, team, inning, half_inning):
 	return (last.play_index + 1) if last else 1
 
 
-def derive_base_state(scorecard, team, inning, half_inning):
-	"""Runners on base and outs recorded so far in this half-inning, computed from prior plays."""
-	entries = (
-		ScorecardEntry.objects.filter(
-			scorecard=scorecard, team=team, inning=inning, half_inning=half_inning,
-		)
-		.order_by('play_index')
-		.select_related('slot__player', 'runner_1st_before', 'runner_2nd_before', 'runner_3rd_before')
-	)
-	bases = {'1B': None, '2B': None, '3B': None}
-	outs = 0
-	for entry in entries:
-		outs += entry.outs_recorded
-		new_bases = {'1B': None, '2B': None, '3B': None}
-		for runner, ending in (
-			(entry.runner_1st_before, entry.runner_1st_ending),
-			(entry.runner_2nd_before, entry.runner_2nd_ending),
-			(entry.runner_3rd_before, entry.runner_3rd_ending),
-		):
-			if runner and ending in new_bases:
-				new_bases[ending] = runner
-		if entry.batter_ending_base in new_bases:
-			new_bases[entry.batter_ending_base] = entry.slot.player
-		bases = new_bases
-	return bases['1B'], bases['2B'], bases['3B'], min(outs, 3)
+def outs_recorded_for_half_inning(scorecard, team, inning, half_inning):
+	"""Total outs recorded so far in this half-inning, capped at 3."""
+	total = ScorecardEntry.objects.filter(
+		scorecard=scorecard, team=team, inning=inning, half_inning=half_inning,
+	).aggregate(total=django_models.Sum('outs_recorded'))['total'] or 0
+	return min(total, 3)
 
 
-def suggest_outcome(result, runners_before):
-	"""Standard baseball advancement defaults for `result`, editable by the scorer before saving."""
-	runner_1st, runner_2nd, runner_3rd = runners_before
-	suggestion = {
-		'outs_recorded': 0,
-		'rbi': 0,
-		'batter_ending_base': 'OUT',
-		'runner_1st_ending': '1B' if runner_1st else '',
-		'runner_2nd_ending': '2B' if runner_2nd else '',
-		'runner_3rd_ending': '3B' if runner_3rd else '',
-	}
+def suggest_outcome(result):
+	"""Default outs for `result`, editable by the scorer before saving. RBI/scored are always manual."""
+	suggestion = {'outs_recorded': 0, 'rbi': 0, 'scored': False}
 
-	def everyone_scores():
-		if runner_1st:
-			suggestion['runner_1st_ending'] = 'HOME'
-		if runner_2nd:
-			suggestion['runner_2nd_ending'] = 'HOME'
-		if runner_3rd:
-			suggestion['runner_3rd_ending'] = 'HOME'
-
-	if result == 'HR':
-		suggestion['batter_ending_base'] = 'HOME'
-		everyone_scores()
-	elif result == '3B':
-		suggestion['batter_ending_base'] = '3B'
-		everyone_scores()
-	elif result == '2B':
-		suggestion['batter_ending_base'] = '2B'
-		everyone_scores()
-	elif result == '1B':
-		suggestion['batter_ending_base'] = '1B'
-		if runner_1st:
-			suggestion['runner_1st_ending'] = '2B'
-		if runner_2nd:
-			suggestion['runner_2nd_ending'] = 'HOME'
-		if runner_3rd:
-			suggestion['runner_3rd_ending'] = 'HOME'
-	elif result in ('BB', 'HBP'):
-		suggestion['batter_ending_base'] = '1B'
-		# Only forced runners advance on a walk/HBP.
-		if runner_1st:
-			suggestion['runner_1st_ending'] = '2B'
-			if runner_2nd:
-				suggestion['runner_2nd_ending'] = '3B'
-				if runner_3rd:
-					suggestion['runner_3rd_ending'] = 'HOME'
-	elif result == 'E':
-		suggestion['batter_ending_base'] = '1B'
-		if runner_1st:
-			suggestion['runner_1st_ending'] = '2B'
-		if runner_2nd:
-			suggestion['runner_2nd_ending'] = '3B'
-		if runner_3rd:
-			suggestion['runner_3rd_ending'] = 'HOME'
-	elif result == 'FC':
-		suggestion['batter_ending_base'] = '1B'
-		suggestion['outs_recorded'] = 1
-		# Assume the lead runner is forced out; the scorer can override which one.
-		if runner_1st:
-			suggestion['runner_1st_ending'] = 'OUT'
-		elif runner_2nd:
-			suggestion['runner_2nd_ending'] = 'OUT'
-		elif runner_3rd:
-			suggestion['runner_3rd_ending'] = 'OUT'
-	elif result == 'SAC':
-		suggestion['batter_ending_base'] = 'OUT'
-		suggestion['outs_recorded'] = 1
-		if runner_3rd:
-			suggestion['runner_3rd_ending'] = 'HOME'
-		elif runner_2nd:
-			suggestion['runner_2nd_ending'] = '3B'
-		elif runner_1st:
-			suggestion['runner_1st_ending'] = '2B'
-	elif result == 'DP':
-		suggestion['batter_ending_base'] = 'OUT'
+	if result == 'DP':
 		suggestion['outs_recorded'] = 2
-	elif result == 'SKIP':
-		# A skipped batter advances the lineup without changing the game state.
-		suggestion['batter_ending_base'] = 'OUT'
+	elif result in ('FC', 'SAC'):
+		suggestion['outs_recorded'] = 1
+	elif result in ('1B', '2B', '3B', 'HR', 'BB', 'HBP', 'E', 'SKIP'):
+		suggestion['outs_recorded'] = 0
 	else:  # K, OUT, OTHER
-		suggestion['batter_ending_base'] = 'OUT'
 		suggestion['outs_recorded'] = 1
 
-	suggestion['rbi'] = sum(
-		1
-		for field in ('batter_ending_base', 'runner_1st_ending', 'runner_2nd_ending', 'runner_3rd_ending')
-		if suggestion[field] == 'HOME'
-	)
 	return suggestion
 
 
@@ -172,7 +78,7 @@ def compute_line_summary(scorecard):
 		'away': {'runs': 0, 'hits': 0, 'errors': 0, 'inning_runs': {}},
 		'home': {'runs': 0, 'hits': 0, 'errors': 0, 'inning_runs': {}},
 	}
-	entries = scorecard.entries.select_related('runner_1st_before', 'runner_2nd_before', 'runner_3rd_before')
+	entries = scorecard.entries.all()
 	for entry in entries:
 		side = 'away' if entry.team_id == away_team_id else 'home'
 		other_side = 'home' if side == 'away' else 'away'
@@ -183,19 +89,9 @@ def compute_line_summary(scorecard):
 			# An error is charged to the fielding (opposing) team.
 			summary[other_side]['errors'] += 1
 
-		runs = sum(
-			1
-			for ending in (
-				entry.batter_ending_base,
-				entry.runner_1st_ending,
-				entry.runner_2nd_ending,
-				entry.runner_3rd_ending,
-			)
-			if ending == 'HOME'
-		)
-		if runs:
-			summary[side]['runs'] += runs
-			summary[side]['inning_runs'][entry.inning] = summary[side]['inning_runs'].get(entry.inning, 0) + runs
+		if entry.scored:
+			summary[side]['runs'] += 1
+			summary[side]['inning_runs'][entry.inning] = summary[side]['inning_runs'].get(entry.inning, 0) + 1
 	return summary
 
 
@@ -211,9 +107,7 @@ def compute_batting_totals(scorecard):
 			'home_runs': 0, 'hit_by_pitch': 0, 'sacrifices': 0, 'reached_on_error': 0,
 		})
 
-	entries = scorecard.entries.select_related(
-		'slot__player', 'runner_1st_before', 'runner_2nd_before', 'runner_3rd_before',
-	)
+	entries = scorecard.entries.select_related('slot__player')
 	for entry in entries:
 		batter = entry.slot.player
 		if entry.result == 'SKIP':
@@ -245,16 +139,8 @@ def compute_batting_totals(scorecard):
 				stats['home_runs'] += 1
 
 		stats['rbis'] += entry.rbi
-
-		if entry.batter_ending_base == 'HOME':
+		if entry.scored:
 			stats['runs'] += 1
-		for runner, ending in (
-			(entry.runner_1st_before, entry.runner_1st_ending),
-			(entry.runner_2nd_before, entry.runner_2nd_ending),
-			(entry.runner_3rd_before, entry.runner_3rd_ending),
-		):
-			if runner and ending == 'HOME':
-				totals_for(runner)['runs'] += 1
 
 	return totals
 
