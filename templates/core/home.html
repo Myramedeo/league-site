@@ -66,7 +66,14 @@
                 <a href="{% url 'game_detail' game.id %}" class="block border-b border-[#33493B] px-4 py-3 transition-colors hover:bg-[#24372F] last:border-b-0">
                     <div class="flex items-baseline justify-between gap-3">
                         <p class="font-scoreboard text-xs uppercase tracking-wide text-[#E8B23D]">{{ game.date|date:"M j" }}</p>
-                        <p class="text-xs text-[#8FA090]">{{ game.scheduled_time|default:"TBD"|time:"g:i A" }}</p>
+                        <div class="flex items-baseline gap-3">
+                            <p class="text-xs text-[#8FA090]">
+                                {{ game.venue|default:"" }}
+                            </p>
+                            <p class="text-xs text-[#F2F0E6]">
+                                {{ game.scheduled_time|default:"TBD"|time:"g:i A" }}
+                            </p>
+                        </div>
                     </div>
                     <p class="mt-1 text-sm text-[#F2F0E6]">{{ game.away_team }} <span class="text-[#8FA090]">@</span> {{ game.home_team }}</p>
                 </a>
