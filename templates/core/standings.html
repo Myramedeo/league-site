@@ -10,7 +10,9 @@
     {% include 'core/_season_switcher.html' %}
 </div>
 
-<div class="rounded-2xl border-4 border-[#0F1D16] bg-[#F4EFE1] p-4 text-[#16241B] shadow-lg md:p-6">
+{% for group in standings_by_phase %}
+<div class="mb-8 rounded-2xl border-4 border-[#0F1D16] bg-[#F4EFE1] p-4 text-[#16241B] shadow-lg md:p-6">
+    <h2 class="font-display mb-3 text-xl font-bold uppercase tracking-wide text-[#16241B]">{{ group.label }}</h2>
     <div class="overflow-x-auto">
         <table class="w-full border-collapse text-left">
             <thead>
@@ -25,7 +27,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for s in standings %}
+                {% for s in group.standings %}
                 <tr class="border-b border-[#16241B]/10 hover:bg-black/5">
                     <td class="px-3 py-2.5 font-medium">{{ s.team }}</td>
                     <td class="font-scoreboard px-3 py-2.5 text-right">{{ s.wins }}</td>
@@ -35,14 +37,15 @@
                     <td class="font-scoreboard px-3 py-2.5 text-right">{{ s.runs_for }}</td>
                     <td class="font-scoreboard px-3 py-2.5 text-right">{{ s.runs_against }}</td>
                 </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="7" class="px-3 py-6 text-center text-[#16241B]/60">No standings yet — check back once games have been played.</td>
-                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+{% empty %}
+<div class="rounded-2xl border-4 border-[#0F1D16] bg-[#F4EFE1] p-4 text-center text-[#16241B]/60 shadow-lg md:p-6">
+    No standings yet — check back once games have been played.
+</div>
+{% endfor %}
 
 {% endblock %}

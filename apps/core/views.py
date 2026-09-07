@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404, render
 from teams.models import Season
-from games.services import compute_standings
+from games.services import compute_standings, compute_standings_by_phase
 from stats.services import batting_leaderboard, rbi_leaderboard, runs_leaderboard
 from games.models import Game
 from announcements.models import Announcement
@@ -24,9 +24,20 @@ def standings_api(request):
     if not season:
         return Response([])
 
-    standings = compute_standings(season)
-    serializer = TeamStandingSerializer(standings, many=True)
-    return Response(serializer.data)
+    phase = request.query_params.get('phase')
+    if phase:
+        standings = compute_standings(season, phase=phase.upper())
+        serializer = TeamStandingSerializer(standings, many=True)
+        return Response(serializer.data)
+
+    return Response([
+        {
+            'phase': group['phase'],
+            'label': group['label'],
+            'standings': TeamStandingSerializer(group['standings'], many=True).data,
+        }
+        for group in compute_standings_by_phase(season)
+    ])
 
 def schedule(request):
     season = get_selected_season(request)
@@ -99,9 +110,9 @@ def article_detail(request, slug):
 @cache_page(60 * 15)  # 15 minutes
 def standings(request):
     season = get_selected_season(request)
-    standings_list = compute_standings(season) if season else []
+    standings_by_phase = compute_standings_by_phase(season) if season else []
     return render(request, 'core/standings.html', {
         'season': season,
-        'standings': standings_list,
+        'standings_by_phase': standings_by_phase,
         'all_seasons': Season.objects.order_by('-year'),
     })
