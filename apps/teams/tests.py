@@ -29,3 +29,20 @@ class TeamListTests(TestCase):
 		self.assertContains(response, 'Previous Team')
 		self.assertNotContains(response, 'Current Team')
 		self.assertEqual(response.context['season'], self.previous_season)
+
+	def test_team_list_defaults_to_first_team_and_shows_batting_stats(self):
+		response = self.client.get(reverse('team_list'))
+
+		self.assertEqual(response.context['selected_team'], self.current_team)
+		self.assertEqual(len(response.context['batting_stats']), 1)
+		self.assertEqual(response.context['batting_stats'][0]['at_bats'], 0)
+		self.assertContains(response, '.000')
+
+	def test_team_list_switches_team_via_query_param(self):
+		response = self.client.get(reverse('team_list'), {
+			'season': self.previous_season.year,
+			'team': self.previous_team.id,
+		})
+
+		self.assertEqual(response.context['selected_team'], self.previous_team)
+		self.assertContains(response, 'Previous Team')

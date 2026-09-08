@@ -1,7 +1,6 @@
-from django.db.models import Prefetch
 from django.shortcuts import render, get_object_or_404
 from core.utils import get_selected_season
-from players.models import Roster
+from stats.services import team_batting_stats
 from .models import Team, Season
 
 from rest_framework import viewsets
@@ -17,20 +16,23 @@ class SeasonViewSet(viewsets.ReadOnlyModelViewSet):
 
 def team_list(request):
     season = get_selected_season(request)
-    teams = (
-        Team.objects.filter(seasons=season).order_by('name').distinct().prefetch_related(
-            Prefetch(
-                'roster_set',
-                queryset=Roster.objects.filter(season=season).select_related('player').order_by('player__last_name', 'player__first_name'),
-                to_attr='season_roster',
-            )
-        )
-        if season else Team.objects.none()
-    )
+    teams = Team.objects.filter(seasons=season).order_by('name').distinct() if season else Team.objects.none()
+
+    selected_team = None
+    team_id = request.GET.get('team')
+    if team_id:
+        selected_team = teams.filter(id=team_id).first()
+    if selected_team is None:
+        selected_team = teams.first()
+
+    batting_stats = team_batting_stats(selected_team, season) if selected_team and season else []
+
     return render(request, 'teams/team_list.html', {
         'all_seasons': Season.objects.order_by('-year'),
         'season': season,
         'teams': teams,
+        'selected_team': selected_team,
+        'batting_stats': batting_stats,
     })
 
 def team_detail(request, team_id):
