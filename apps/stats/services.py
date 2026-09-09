@@ -1,6 +1,73 @@
 from django.db.models import Sum, F, Q
 from .models import BattingStatLine, PitchingStatLine
 
+
+def _batting_totals_row(totals, season):
+    at_bats = totals.get('at_bats') or 0
+    hits = totals.get('hits') or 0
+    walks = totals.get('walks') or 0
+    hit_by_pitch = totals.get('hit_by_pitch') or 0
+    sacrifices = totals.get('sacrifices') or 0
+    singles = totals.get('singles') or 0
+    doubles = totals.get('doubles') or 0
+    triples = totals.get('triples') or 0
+    home_runs = totals.get('home_runs') or 0
+    plate_appearances = at_bats + walks + hit_by_pitch + sacrifices
+    batting_average = hits / at_bats if at_bats else 0.0
+    on_base_percentage = (
+        (hits + walks + hit_by_pitch) / plate_appearances
+        if plate_appearances else 0.0
+    )
+    total_bases = singles + (2 * doubles) + (3 * triples) + (4 * home_runs)
+    slugging_percentage = total_bases / at_bats if at_bats else 0.0
+
+    return {
+        'season': season,
+        'at_bats': at_bats,
+        'runs': totals.get('runs') or 0,
+        'hits': hits,
+        'doubles': doubles,
+        'triples': triples,
+        'home_runs': home_runs,
+        'rbis': totals.get('rbis') or 0,
+        'walks': walks,
+        'strikeouts': totals.get('strikeouts') or 0,
+        'batting_average': batting_average,
+        'on_base_percentage': on_base_percentage,
+        'slugging_percentage': slugging_percentage,
+        'on_base_plus_slugging': on_base_percentage + slugging_percentage,
+    }
+
+
+def player_batting_stats(player):
+    """Returns a player's batting totals by season, followed by career totals."""
+    fields = (
+        'at_bats', 'runs', 'hits', 'rbis', 'walks', 'strikeouts',
+        'hit_by_pitch', 'sacrifices', 'singles', 'doubles', 'triples',
+        'home_runs',
+    )
+    season_rows = (
+        BattingStatLine.objects
+        .filter(player=player)
+        .values('game__season__year', 'game__season__name')
+        .annotate(**{field: Sum(field) for field in fields})
+        .order_by('-game__season__year')
+    )
+
+    results = []
+    for row in season_rows:
+        season = row['game__season__name'] or str(row['game__season__year'])
+        results.append(_batting_totals_row(row, season))
+
+    overall_totals = BattingStatLine.objects.filter(player=player).aggregate(
+        **{field: Sum(field) for field in fields}
+    )
+    if results:
+        results.append(_batting_totals_row(overall_totals, 'Overall'))
+
+    return results
+
+
 def team_batting_stats(team, season):
     """Returns each roster player's season batting totals for a team, in roster order, zero-filled if no lines recorded."""
     from players.models import Roster
