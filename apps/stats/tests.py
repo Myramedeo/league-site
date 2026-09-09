@@ -125,6 +125,9 @@ class TeamBattingStatsTests(TestCase):
 
         self.assertEqual(by_player[batter]['at_bats'], 7)
         self.assertEqual(by_player[batter]['hits'], 3)
+        self.assertEqual(by_player[batter]['doubles'], 0)
+        self.assertEqual(by_player[batter]['triples'], 0)
+        self.assertEqual(by_player[batter]['home_runs'], 0)
         self.assertEqual(by_player[batter]['batting_average'], round(3 / 7, 3))
         self.assertEqual(by_player[bench]['at_bats'], 0)
         self.assertEqual(by_player[bench]['batting_average'], 0.0)
@@ -148,6 +151,9 @@ class TeamBattingStatsTests(TestCase):
 
         result = team_batting_stats(self.team, self.season)[0]
 
+        self.assertEqual(result['doubles'], 1)
+        self.assertEqual(result['triples'], 1)
+        self.assertEqual(result['home_runs'], 1)
         self.assertEqual(result['slugging_percentage'], 1.1)
         self.assertEqual(result['on_base_plus_slugging'], 1.683)
 

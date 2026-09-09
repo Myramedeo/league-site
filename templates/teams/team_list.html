@@ -30,37 +30,43 @@
     <div class="overflow-x-auto">
         <table class="w-full text-left">
             <thead>
-                <tr class="border-b border-[#33493B] text-xs uppercase tracking-wide text-[#8FA090]">
-                    <th class="py-2 pr-3 font-normal"><button type="button" data-sort-column="0" class="text-left hover:text-[#E8B23D]" aria-label="Sort by player">Player</button></th>
-                    <th class="py-2 px-3 font-normal"><button type="button" data-sort-column="1" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by at bats">AB</button></th>
-                    <th class="py-2 px-3 font-normal"><button type="button" data-sort-column="2" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by runs">R</button></th>
-                    <th class="py-2 px-3 font-normal"><button type="button" data-sort-column="3" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by hits">H</button></th>
-                    <th class="py-2 px-3 font-normal"><button type="button" data-sort-column="4" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by runs batted in">RBI</button></th>
-                    <th class="py-2 px-3 font-normal"><button type="button" data-sort-column="5" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by walks">BB</button></th>
-                    <th class="py-2 px-3 font-normal"><button type="button" data-sort-column="6" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by strikeouts">SO</button></th>
-                    <th class="py-2 px-3 font-normal"><button type="button" data-sort-column="7" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by batting average">AVG</button></th>
-                    <th class="py-2 px-3 font-normal"><button type="button" data-sort-column="8" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by on-base percentage">OBP</button></th>
-                    <th class="py-2 px-3 font-normal"><button type="button" data-sort-column="9" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by slugging percentage">SLG</button></th>
-                    <th class="py-2 pl-3 font-normal"><button type="button" data-sort-column="10" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by on-base plus slugging">OPS</button></th>
+                <tr class="border-b border-[#33493B] text-sm uppercase tracking-wide text-[#8FA090]">
+                    <th class="py-2 pr-2 font-normal"><button type="button" data-sort-column="0" class="text-left hover:text-[#E8B23D]" aria-label="Sort by player">Player</button></th>
+                    <th class="py-2 px-2 font-normal"><button type="button" data-sort-column="1" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by at bats">AB</button></th>
+                    <th class="py-2 px-2 font-normal"><button type="button" data-sort-column="2" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by runs">R</button></th>
+                    <th class="py-2 px-2 font-normal"><button type="button" data-sort-column="3" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by hits">H</button></th>
+                    <th class="py-2 px-2 font-normal"><button type="button" data-sort-column="4" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by doubles">2B</button></th>
+                    <th class="py-2 px-2 font-normal"><button type="button" data-sort-column="5" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by triples">3B</button></th>
+                    <th class="py-2 px-2 font-normal"><button type="button" data-sort-column="6" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by home runs">HR</button></th>
+                    <th class="py-2 px-2 font-normal"><button type="button" data-sort-column="7" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by runs batted in">RBI</button></th>
+                    <th class="py-2 px-2 font-normal"><button type="button" data-sort-column="8" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by walks">BB</button></th>
+                    <th class="py-2 px-2 font-normal"><button type="button" data-sort-column="9" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by strikeouts">K</button></th>
+                    <th class="py-2 px-2 font-normal"><button type="button" data-sort-column="10" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by batting average">AVG</button></th>
+                    <th class="py-2 px-2 font-normal"><button type="button" data-sort-column="11" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by on-base percentage">OBP</button></th>
+                    <th class="py-2 px-2 font-normal"><button type="button" data-sort-column="12" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by slugging percentage">SLG</button></th>
+                    <th class="py-2 pl-2 font-normal"><button type="button" data-sort-column="13" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by on-base plus slugging">OPS</button></th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-[#33493B]">
+            <tbody class="divide-y divide-[#454545] text-sm">
                 {% for entry in batting_stats %}
                 <tr data-player-name="{{ entry.player }}">
-                    <td class="py-3 pr-3">
+                    <td class="py-2.5 pr-2">
                         <a href="{% url 'player_detail' entry.player.id %}"
                            class="font-medium text-[#F2F0E6] hover:text-[#E8B23D] transition-colors">{{ entry.player }}</a>
                     </td>
-                    <td class="py-3 px-3 font-scoreboard text-[#F2F0E6]">{{ entry.at_bats }}</td>
-                    <td class="py-3 px-3 font-scoreboard text-[#F2F0E6]">{{ entry.runs }}</td>
-                    <td class="py-3 px-3 font-scoreboard text-[#F2F0E6]">{{ entry.hits }}</td>
-                    <td class="py-3 px-3 font-scoreboard text-[#F2F0E6]">{{ entry.rbis }}</td>
-                    <td class="py-3 px-3 font-scoreboard text-[#F2F0E6]">{{ entry.walks }}</td>
-                    <td class="py-3 px-3 font-scoreboard text-[#F2F0E6]">{{ entry.strikeouts }}</td>
-                    <td class="py-3 px-3 font-scoreboard text-[#E8B23D]">{{ entry.batting_average|floatformat:3 }}</td>
-                    <td class="py-3 px-3 font-scoreboard text-[#E8B23D]">{{ entry.on_base_percentage|floatformat:3 }}</td>
-                    <td class="py-3 px-3 font-scoreboard text-[#E8B23D]">{{ entry.slugging_percentage|floatformat:3 }}</td>
-                    <td class="py-3 pl-3 font-scoreboard text-[#E8B23D]">{{ entry.on_base_plus_slugging|floatformat:3 }}</td>
+                    <td class="py-2.5 px-2 font-scoreboard text-[#F2F0E6]">{{ entry.at_bats }}</td>
+                    <td class="py-2.5 px-2 font-scoreboard text-[#F2F0E6]">{{ entry.runs }}</td>
+                    <td class="py-2.5 px-2 font-scoreboard text-[#F2F0E6]">{{ entry.hits }}</td>
+                    <td class="py-2.5 px-2 font-scoreboard text-[#F2F0E6]">{{ entry.doubles }}</td>
+                    <td class="py-2.5 px-2 font-scoreboard text-[#F2F0E6]">{{ entry.triples }}</td>
+                    <td class="py-2.5 px-2 font-scoreboard text-[#F2F0E6]">{{ entry.home_runs }}</td>
+                    <td class="py-2.5 px-2 font-scoreboard text-[#F2F0E6]">{{ entry.rbis }}</td>
+                    <td class="py-2.5 px-2 font-scoreboard text-[#F2F0E6]">{{ entry.walks }}</td>
+                    <td class="py-2.5 px-2 font-scoreboard text-[#F2F0E6]">{{ entry.strikeouts }}</td>
+                    <td class="py-2.5 px-2 font-scoreboard text-[#E8B23D]">{{ entry.batting_average|floatformat:3 }}</td>
+                    <td class="py-2.5 px-2 font-scoreboard text-[#E8B23D]">{{ entry.on_base_percentage|floatformat:3 }}</td>
+                    <td class="py-2.5 px-2 font-scoreboard text-[#E8B23D]">{{ entry.slugging_percentage|floatformat:3 }}</td>
+                    <td class="py-2.5 pl-2 font-scoreboard text-[#E8B23D]">{{ entry.on_base_plus_slugging|floatformat:3 }}</td>
                 </tr>
                 {% empty %}
                 <tr>
