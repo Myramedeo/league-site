@@ -33,6 +33,10 @@ def team_batting_stats(team, season):
                 strikeouts=Sum('strikeouts'),
                 hit_by_pitch=Sum('hit_by_pitch'),
                 sacrifices=Sum('sacrifices'),
+                singles=Sum('singles'),
+                doubles=Sum('doubles'),
+                triples=Sum('triples'),
+                home_runs=Sum('home_runs'),
             )
         )
     }
@@ -45,7 +49,17 @@ def team_batting_stats(team, season):
         walks = totals.get('walks') or 0
         hit_by_pitch = totals.get('hit_by_pitch') or 0
         sacrifices = totals.get('sacrifices') or 0
+        singles = totals.get('singles') or 0
+        doubles = totals.get('doubles') or 0
+        triples = totals.get('triples') or 0
+        home_runs = totals.get('home_runs') or 0
         plate_appearances = at_bats + walks + hit_by_pitch + sacrifices
+        batting_average = round(hits / at_bats, 3) if at_bats else 0.0
+        raw_on_base_percentage = ((hits + walks + hit_by_pitch) / plate_appearances) if plate_appearances else 0.0
+        on_base_percentage = round(raw_on_base_percentage, 3)
+        total_bases = singles + (2 * doubles) + (3 * triples) + (4 * home_runs)
+        raw_slugging_percentage = (total_bases / at_bats) if at_bats else 0.0
+        slugging_percentage = round(raw_slugging_percentage, 3)
 
         results.append({
             'player': entry.player,
@@ -55,8 +69,10 @@ def team_batting_stats(team, season):
             'rbis': totals.get('rbis') or 0,
             'walks': walks,
             'strikeouts': totals.get('strikeouts') or 0,
-            'batting_average': round(hits / at_bats, 3) if at_bats else 0.0,
-            'on_base_percentage': round((hits + walks + hit_by_pitch) / plate_appearances, 3) if plate_appearances else 0.0,
+            'batting_average': batting_average,
+            'on_base_percentage': on_base_percentage,
+            'slugging_percentage': slugging_percentage,
+            'on_base_plus_slugging': round(raw_on_base_percentage + raw_slugging_percentage, 3),
         })
 
     return results

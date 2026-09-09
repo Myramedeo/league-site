@@ -129,6 +129,28 @@ class TeamBattingStatsTests(TestCase):
         self.assertEqual(by_player[bench]['at_bats'], 0)
         self.assertEqual(by_player[bench]['batting_average'], 0.0)
 
+    def test_calculates_slugging_and_ops_from_hit_types(self):
+        batter = Player.objects.create(first_name='Casey', last_name='Batter')
+        Roster.objects.create(player=batter, team=self.team, season=self.season)
+        opponent = Team.objects.create(name="Owls")
+        game = Game.objects.create(season=self.season, home_team=self.team, away_team=opponent, date='2026-06-01')
+        BattingStatLine.objects.create(
+            player=batter,
+            game=game,
+            at_bats=10,
+            hits=5,
+            singles=2,
+            doubles=1,
+            triples=1,
+            home_runs=1,
+            walks=2,
+        )
+
+        result = team_batting_stats(self.team, self.season)[0]
+
+        self.assertEqual(result['slugging_percentage'], 1.1)
+        self.assertEqual(result['on_base_plus_slugging'], 1.683)
+
     def test_player_with_multiple_roster_rows_not_double_counted(self):
         from teams.models import Competition
 

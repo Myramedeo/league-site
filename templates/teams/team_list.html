@@ -39,7 +39,9 @@
                     <th class="py-2 px-3 font-normal"><button type="button" data-sort-column="5" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by walks">BB</button></th>
                     <th class="py-2 px-3 font-normal"><button type="button" data-sort-column="6" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by strikeouts">SO</button></th>
                     <th class="py-2 px-3 font-normal"><button type="button" data-sort-column="7" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by batting average">AVG</button></th>
-                    <th class="py-2 pl-3 font-normal"><button type="button" data-sort-column="8" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by on-base percentage">OBP</button></th>
+                    <th class="py-2 px-3 font-normal"><button type="button" data-sort-column="8" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by on-base percentage">OBP</button></th>
+                    <th class="py-2 px-3 font-normal"><button type="button" data-sort-column="9" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by slugging percentage">SLG</button></th>
+                    <th class="py-2 pl-3 font-normal"><button type="button" data-sort-column="10" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by on-base plus slugging">OPS</button></th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-[#33493B]">
@@ -56,11 +58,13 @@
                     <td class="py-3 px-3 font-scoreboard text-[#F2F0E6]">{{ entry.walks }}</td>
                     <td class="py-3 px-3 font-scoreboard text-[#F2F0E6]">{{ entry.strikeouts }}</td>
                     <td class="py-3 px-3 font-scoreboard text-[#E8B23D]">{{ entry.batting_average|floatformat:3 }}</td>
-                    <td class="py-3 pl-3 font-scoreboard text-[#E8B23D]">{{ entry.on_base_percentage|floatformat:3 }}</td>
+                    <td class="py-3 px-3 font-scoreboard text-[#E8B23D]">{{ entry.on_base_percentage|floatformat:3 }}</td>
+                    <td class="py-3 px-3 font-scoreboard text-[#E8B23D]">{{ entry.slugging_percentage|floatformat:3 }}</td>
+                    <td class="py-3 pl-3 font-scoreboard text-[#E8B23D]">{{ entry.on_base_plus_slugging|floatformat:3 }}</td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="9" class="py-6 text-center text-[#8FA090]">No players on the roster yet.</td>
+                    <td colspan="11" class="py-6 text-center text-[#8FA090]">No players on the roster yet.</td>
                 </tr>
                 {% endfor %}
             </tbody>
