@@ -62,6 +62,8 @@ class GameResultInline(nested_admin.NestedStackedInline):
 
 @admin.register(Game)
 class GameAdmin(nested_admin.NestedModelAdmin):
+    exclude = ("legacy_game_id",)
+    
     list_display = (
         'date',
         'scheduled_time',
@@ -71,7 +73,3 @@ class GameAdmin(nested_admin.NestedModelAdmin):
         'home_team',
         'season'
     )
-    inlines = [
-        GameResultInline,
-        BattingStatLineInline,
-    ]

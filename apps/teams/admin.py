@@ -17,6 +17,8 @@ class SeasonAdmin(admin.ModelAdmin):
 
 @admin.register(Competition)
 class CompetitionAdmin(admin.ModelAdmin):
+    exclude = ("expected_team_count", "legacy_division_id")
+
     list_display = ('name', 'season', 'phase', 'source_order')
     list_filter = ('season', 'phase')
     search_fields = ('name',)

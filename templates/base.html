@@ -37,7 +37,7 @@
                 {% if request.user.is_staff %}
                 <a href="{% url 'game_entry:portal' %}" class="text-[#E8B23D] hover:text-[#F2C463] transition-colors">Scoring</a>
                 {% else %}
-                <a href="{% url 'game_entry:sign_in' %}?next={% url 'game_entry:portal' %}" class="text-[#E8B23D] hover:text-[#F2C463] transition-colors">Sign In</a>
+                <a href="{% url 'game_entry:sign_in' %}?next={% url 'game_entry:portal' %}" class="text-[#E8B23D] hover:text-[#F2C463] transition-colors">Admin</a>
                 {% endif %}
             </div>
         </div>

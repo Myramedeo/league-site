@@ -8,7 +8,6 @@ class BattingSlotInline(admin.TabularInline):
 	extra = 0
 
 
-@admin.register(GameScorecard)
 class GameScorecardAdmin(admin.ModelAdmin):
 	list_display = ('game', 'created_by', 'is_finalized', 'displayed_innings', 'created_at')
 	list_filter = ('is_finalized', 'game__season')
@@ -16,7 +15,6 @@ class GameScorecardAdmin(admin.ModelAdmin):
 	inlines = [BattingSlotInline]
 
 
-@admin.register(ScorecardEntry)
 class ScorecardEntryAdmin(admin.ModelAdmin):
 	list_display = ('scorecard', 'team', 'inning', 'half_inning', 'play_index', 'batter', 'result', 'rbi', 'created_at')
 	list_filter = ('result', 'team', 'scorecard__game__season')

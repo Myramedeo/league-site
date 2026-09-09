@@ -2,7 +2,6 @@ import nested_admin
 from django.contrib import admin
 from .models import BattingStatLine
 
-@admin.register(BattingStatLine)
 class BattingStatLineAdmin(admin.ModelAdmin):
     list_display = ('player', 'game', 'at_bats', 'hits', 'batting_average')
     list_filter = ('game__season',)
