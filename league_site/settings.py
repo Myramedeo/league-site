@@ -240,5 +240,8 @@ CKEDITOR_5_CONFIGS = {
             'insertImage', 'mediaEmbed', '|',
             'undo', 'redo',
         ],
+        'link': {
+            'defaultProtocol': 'https://',
+        },
     },
 }
