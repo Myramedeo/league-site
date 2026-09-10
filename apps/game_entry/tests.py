@@ -33,7 +33,8 @@ class GameEntryPortalTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'game_entry/portal.html')
-        self.assertContains(response, 'Select a Game')
+        self.assertContains(response, 'Scheduled Games')
+        self.assertContains(response, 'No games available')
 
     def test_portal_lists_only_current_season_games(self):
         current_game = Game.objects.create(

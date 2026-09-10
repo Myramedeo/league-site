@@ -1,5 +1,5 @@
 from django.test import TestCase
-from .models import Announcement
+from announcements.models import Announcement
 
 
 class AnnouncementTests(TestCase):

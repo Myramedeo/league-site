@@ -5,7 +5,7 @@ from datetime import date
 from unittest.mock import patch
 
 from announcements.models import Announcement
-from .models import Article
+from core.models import Article
 from games.models import Game, GameResult
 from teams.models import Season, Team
 

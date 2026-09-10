@@ -3,7 +3,7 @@ from django.urls import reverse
 
 from players.models import Player, Roster
 
-from .models import Season, Team
+from teams.models import Season, Team
 
 
 class TeamListTests(TestCase):

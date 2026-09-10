@@ -1,7 +1,7 @@
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from .models import Photo
+from photos.models import Photo
 
 
 @override_settings(
