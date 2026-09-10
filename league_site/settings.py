@@ -53,6 +53,11 @@ AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
 AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', default='')
 AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='')
 
+# Set for S3-compatible providers other than AWS (e.g. Railway Buckets); leave blank for real AWS S3.
+AWS_S3_ENDPOINT_URL = config('AWS_S3_ENDPOINT_URL', default='')
+# Railway Buckets use path-style URLs (endpoint/bucket/key) instead of AWS's virtual-hosted style.
+AWS_S3_ADDRESSING_STYLE = config('AWS_S3_ADDRESSING_STYLE', default='auto')
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -213,7 +218,7 @@ CACHES = {
 NPM_BIN_PATH = config('NPM_BIN_PATH', default='npm')
 
 
-# AWS S3 Configuration
+# S3-Compatible Object Storage Configuration (AWS S3 or Railway Buckets)
 
 STORAGES = {
     "default": {
