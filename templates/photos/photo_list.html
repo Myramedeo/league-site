@@ -9,20 +9,63 @@
         <h1 class="mt-2 font-display text-4xl font-semibold uppercase text-[#F2F0E6]">Photos</h1>
     </div>
 
-    {% if photos %}
-    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {% for photo in photos %}
-        <figure class="overflow-hidden rounded-lg border border-[#33493B] bg-[#1B2A22]">
-            <img src="{{ photo.image.url }}" alt="{{ photo.title }}" class="aspect-[4/3] w-full object-cover">
-            <figcaption class="p-4">
-                <h2 class="font-display text-xl uppercase text-[#F2F0E6]">{{ photo.title }}</h2>
-                {% if photo.caption %}
-                <p class="mt-2 text-sm leading-6 text-[#C9CFC3]">{{ photo.caption }}</p>
-                {% endif %}
-            </figcaption>
-        </figure>
+    {% if albums or unfiled_photos %}
+        {% for album in albums %}
+        <div class="mb-10">
+            <h2 class="font-display text-2xl uppercase text-[#F2F0E6]">{{ album.name }}</h2>
+            {% if album.description %}
+            <p class="mt-1 text-sm leading-6 text-[#C9CFC3]">{{ album.description }}</p>
+            {% endif %}
+            <div class="mt-4 flex gap-6 overflow-x-auto pb-4">
+                {% for photo in album.active_photos %}
+                <figure x-data="{ photoOpen: false }" class="w-72 flex-shrink-0 overflow-hidden rounded-lg border border-[#33493B] bg-[#1B2A22]">
+                    <button type="button" class="block w-full cursor-zoom-in text-left" @click="photoOpen = true" aria-label="View {{ photo.title }} larger">
+                        <img src="{{ photo.image.url }}" alt="{{ photo.title }}" class="aspect-[4/3] w-full object-cover transition-opacity hover:opacity-80">
+                    </button>
+                    <figcaption class="p-4">
+                        <h3 class="font-display text-lg uppercase text-[#F2F0E6]">{{ photo.title }}</h3>
+                        {% if photo.caption %}
+                        <p class="mt-2 text-sm leading-6 text-[#C9CFC3]">{{ photo.caption }}</p>
+                        {% endif %}
+                    </figcaption>
+                    <div x-cloak x-show="photoOpen" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4" role="dialog" aria-modal="true" aria-label="{{ photo.title }}" @click.self="photoOpen = false" @keydown.escape.window="photoOpen = false">
+                        <div class="relative max-h-full max-w-5xl">
+                            <button type="button" class="absolute right-2 top-2 rounded-full bg-[#171717]/90 px-3 py-1 text-2xl leading-none text-[#F2F0E6] transition-colors hover:text-[#E8B23D]" @click="photoOpen = false" aria-label="Close photo">&times;</button>
+                            <img src="{{ photo.image.url }}" alt="{{ photo.title }}" class="max-h-[88vh] max-w-full rounded-lg object-contain shadow-2xl">
+                        </div>
+                    </div>
+                </figure>
+                {% endfor %}
+            </div>
+        </div>
         {% endfor %}
-    </div>
+
+        {% if unfiled_photos %}
+        <div class="mb-10">
+            <h2 class="font-display text-2xl uppercase text-[#F2F0E6]">More photos</h2>
+            <div class="mt-4 flex gap-6 overflow-x-auto pb-4">
+                {% for photo in unfiled_photos %}
+                <figure x-data="{ photoOpen: false }" class="w-72 flex-shrink-0 overflow-hidden rounded-lg border border-[#33493B] bg-[#1B2A22]">
+                    <button type="button" class="block w-full cursor-zoom-in text-left" @click="photoOpen = true" aria-label="View {{ photo.title }} larger">
+                        <img src="{{ photo.image.url }}" alt="{{ photo.title }}" class="aspect-[4/3] w-full object-cover transition-opacity hover:opacity-80">
+                    </button>
+                    <figcaption class="p-4">
+                        <h3 class="font-display text-lg uppercase text-[#F2F0E6]">{{ photo.title }}</h3>
+                        {% if photo.caption %}
+                        <p class="mt-2 text-sm leading-6 text-[#C9CFC3]">{{ photo.caption }}</p>
+                        {% endif %}
+                    </figcaption>
+                    <div x-cloak x-show="photoOpen" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4" role="dialog" aria-modal="true" aria-label="{{ photo.title }}" @click.self="photoOpen = false" @keydown.escape.window="photoOpen = false">
+                        <div class="relative max-h-full max-w-5xl">
+                            <button type="button" class="absolute right-2 top-2 rounded-full bg-[#171717]/90 px-3 py-1 text-2xl leading-none text-[#F2F0E6] transition-colors hover:text-[#E8B23D]" @click="photoOpen = false" aria-label="Close photo">&times;</button>
+                            <img src="{{ photo.image.url }}" alt="{{ photo.title }}" class="max-h-[88vh] max-w-full rounded-lg object-contain shadow-2xl">
+                        </div>
+                    </div>
+                </figure>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
     {% else %}
     <p class="text-[#C9CFC3]">No photos have been added yet.</p>
     {% endif %}
