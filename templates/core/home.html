@@ -18,7 +18,14 @@
                     <span class="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#E8B23D]" aria-hidden="true"></span>
                     <div class="flex-1">
                         <h2 class="font-display text-lg uppercase tracking-wide text-[#F2F0E6]">{{ announcement.title }}</h2>
-                        <p class="mt-2 text-[#C9CFC3]">{{ announcement.description }}</p>
+                        <p class="mt-2 whitespace-pre-line text-[#C9CFC3]">{{ announcement.description }}</p>
+                        {% if announcement.attachment %}
+                        <a href="{{ announcement.attachment.url }}" download
+                           class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[#E8B23D] hover:underline">
+                            <span aria-hidden="true">&#128196;</span>
+                            Download attached document
+                        </a>
+                        {% endif %}
                         <p class="mt-3 text-xs text-[#7C8B7F]">
                             Posted {{ announcement.created_at|date:"M d, Y" }}
                         </p>
