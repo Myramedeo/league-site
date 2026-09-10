@@ -231,7 +231,7 @@ STORAGES = {
 
 AWS_S3_FILE_OVERWRITE = False
 AWS_DEFAULT_ACL = None
-AWS_QUERYSTRING_AUTH = False
+AWS_QUERYSTRING_AUTH = True
 
 # django-ckeditor-5 Configuration
 
