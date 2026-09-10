@@ -102,6 +102,30 @@ class GameResultTests(TestCase):
             [second_batter, first_batter],
         )
 
+    def test_game_detail_shows_hidden_multi_team_player_under_scorecard_team(self):
+        game = Game.objects.create(
+            season=self.season, home_team=self.team_a,
+            away_team=self.team_b, date='2026-06-11',
+        )
+        self.create_result(game, [0], [0], final_home_score=0, final_away_score=0)
+        player = Player.objects.create(first_name='Casey', last_name='Guest')
+        Roster.objects.create(player=player, team=self.team_a, season=self.season)
+        Roster.objects.create(
+            player=player,
+            team=self.team_b,
+            season=self.season,
+            show_in_team_list=False,
+        )
+        BattingStatLine.objects.create(player=player, game=game)
+
+        scorecard = GameScorecard.objects.create(game=game)
+        BattingSlot.objects.create(scorecard=scorecard, team=self.team_b, order=1, player=player)
+
+        response = self.client.get(reverse('game_detail', args=[game.id]))
+
+        self.assertEqual(response.context['home_batting_lines'], [])
+        self.assertEqual([line.player for line in response.context['away_batting_lines']], [player])
+
     def test_game_detail_page_renders_scheduled_game_without_result(self):
         game = Game.objects.create(
             season=self.season,

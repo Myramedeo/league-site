@@ -17,6 +17,7 @@ class Roster(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     season = models.ForeignKey(Season, on_delete=models.CASCADE)
+    show_in_team_list = models.BooleanField(default=True)
     competition = models.ForeignKey(
         Competition,
         on_delete=models.CASCADE,

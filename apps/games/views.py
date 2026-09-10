@@ -43,6 +43,12 @@ def game_detail(request, game_id):
         BattingStatLine.objects.filter(game=game).select_related('player').order_by('player__last_name', 'player__first_name')
     )
 
+    lineup_team_by_player = dict(
+        BattingSlot.objects.filter(
+            scorecard__game=game,
+            player_id__in=[line.player_id for line in batting_lines],
+        ).values_list('player_id', 'team_id')
+    )
     roster_by_player = {
         roster.player_id: roster.team_id
         for roster in Roster.objects.filter(player__in=[line.player_id for line in batting_lines], season=game.season)
@@ -52,7 +58,7 @@ def game_detail(request, game_id):
         home_lines = []
         away_lines = []
         for line in lines:
-            team_id = roster_by_player.get(line.player_id)
+            team_id = lineup_team_by_player.get(line.player_id, roster_by_player.get(line.player_id))
             if team_id == game.home_team_id:
                 home_lines.append(line)
             elif team_id == game.away_team_id:

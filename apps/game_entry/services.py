@@ -55,6 +55,16 @@ def outs_recorded_for_half_inning(scorecard, team, inning, half_inning):
 	return min(total, 3)
 
 
+def missing_lineup_slots(scorecard, team):
+	"""Batting-order gaps: numbers with no player assigned below the highest assigned order."""
+	orders = set(
+		BattingSlot.objects.filter(scorecard=scorecard, team=team).values_list('order', flat=True)
+	)
+	if not orders:
+		return []
+	return [order for order in range(1, max(orders) + 1) if order not in orders]
+
+
 def suggest_outcome(result):
 	"""Default outs for `result`, editable by the scorer before saving. RBI/scored are always manual."""
 	suggestion = {'outs_recorded': 0, 'rbi': 0, 'scored': False}

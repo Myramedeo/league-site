@@ -13,5 +13,5 @@ class PlayerAdmin(admin.ModelAdmin):
 
 @admin.register(Roster)
 class RosterAdmin(admin.ModelAdmin):
-    list_display = ('player', 'team', 'season')
+    list_display = ('player', 'team', 'season', 'show_in_team_list')
     list_filter = ('season', 'team')

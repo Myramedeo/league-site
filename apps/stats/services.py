@@ -73,7 +73,7 @@ def team_batting_stats(team, season):
     from players.models import Roster
 
     roster_entries = (
-        Roster.objects.filter(team=team, season=season)
+        Roster.objects.filter(team=team, season=season, show_in_team_list=True)
         .select_related('player')
         .order_by('player__last_name', 'player__first_name')
     )

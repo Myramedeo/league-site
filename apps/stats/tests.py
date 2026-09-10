@@ -175,4 +175,19 @@ class TeamBattingStatsTests(TestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]['at_bats'], 4)
 
+    def test_hidden_roster_player_is_excluded_from_team_list_stats(self):
+        visible_player = Player.objects.create(first_name='Casey', last_name='Visible')
+        hidden_player = Player.objects.create(first_name='Harper', last_name='Hidden')
+        Roster.objects.create(player=visible_player, team=self.team, season=self.season)
+        Roster.objects.create(
+            player=hidden_player,
+            team=self.team,
+            season=self.season,
+            show_in_team_list=False,
+        )
+
+        results = team_batting_stats(self.team, self.season)
+
+        self.assertEqual([row['player'] for row in results], [visible_player])
+
 

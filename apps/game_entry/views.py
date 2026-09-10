@@ -220,6 +220,13 @@ def finalize_game(request, game_id):
 		return redirect('game_entry:game_workspace', game_id=game_id)
 
 	game, scorecard = _get_game_and_scorecard(game_id, request.user)
+
+	away_gaps = services.missing_lineup_slots(scorecard, game.away_team)
+	home_gaps = services.missing_lineup_slots(scorecard, game.home_team)
+	if away_gaps or home_gaps:
+		messages.error(request, 'Every lineup spot must have a player assigned before finalizing.')
+		return redirect('game_entry:game_workspace', game_id=game_id)
+
 	services.finalize_scorecard(scorecard)
 	messages.success(request, 'Game finalized. Score and stats have been saved.')
 	return redirect('game_entry:game_workspace', game_id=game_id)

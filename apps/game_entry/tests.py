@@ -229,6 +229,22 @@ class ScorecardWorkflowTests(TestCase):
         slot = BattingSlot.objects.get(scorecard=scorecard, team=self.owls, order=1)
         self.assertEqual(slot.player, self.away_players[0])
 
+    def test_hidden_roster_player_can_be_assigned_to_a_lineup_slot(self):
+        player = Player.objects.create(first_name='Away', last_name='Guest')
+        Roster.objects.create(
+            player=player,
+            team=self.owls,
+            season=self.season,
+            show_in_team_list=False,
+        )
+
+        response = self._set_lineup_slot('away', 1, player)
+
+        self.assertEqual(response.status_code, 200)
+        scorecard = GameScorecard.objects.get(game=self.game)
+        slot = BattingSlot.objects.get(scorecard=scorecard, team=self.owls, order=1)
+        self.assertEqual(slot.player, player)
+
     def test_duplicate_player_in_lineup_rejected(self):
         self._set_lineup_slot('away', 1, self.away_players[0])
         response = self._set_lineup_slot('away', 2, self.away_players[0])
