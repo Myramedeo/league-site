@@ -15,7 +15,7 @@
 </div>
 
 {% if teams %}
-<div class="mb-6 flex flex-wrap gap-2">
+<div class="mb-4 flex flex-wrap gap-2">
     {% for team in teams %}
     <a href="?season={{ season.year }}&team={{ team.id }}"
        class="rounded-full px-4 py-1.5 font-scoreboard text-xs uppercase tracking-wide transition-colors
@@ -25,13 +25,13 @@
     {% endfor %}
 </div>
 
-<div class="rounded-2xl border border-[#33493B] bg-[#1B2A22] p-4 md:p-6">
-    <h2 class="font-display mb-4 border-b border-[#33493B] pb-3 text-lg uppercase tracking-wide text-[#F2F0E6]">{{ selected_team.name }}</h2>
+<div class="rounded-md border border-[#33493B] bg-[#1B2A22] p-3 md:p-5">
+    <h2 class="font-display mb-4 text-2xl uppercase tracking-wide text-[#F2F0E6]">{{ selected_team.name }}</h2>
     <div class="overflow-x-auto">
         <table class="w-full text-left">
             <thead>
                 <tr class="border-b border-[#33493B] text-sm uppercase tracking-wide text-[#8FA090]">
-                    <th class="py-2 pr-2 font-normal"><button type="button" data-sort-column="0" class="text-left hover:text-[#E8B23D]" aria-label="Sort by player">Player</button></th>
+                    <th class="sticky left-0 z-20 bg-[#1B2A22] py-2 pr-2 font-normal"><button type="button" data-sort-column="0" class="text-left hover:text-[#E8B23D]" aria-label="Sort by player">Player</button></th>
                     <th class="py-2 px-2 font-normal"><button type="button" data-sort-column="1" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by at bats">AB</button></th>
                     <th class="py-2 px-2 font-normal"><button type="button" data-sort-column="2" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by runs">R</button></th>
                     <th class="py-2 px-2 font-normal"><button type="button" data-sort-column="3" data-sort-type="number" class="hover:text-[#E8B23D]" aria-label="Sort by hits">H</button></th>
@@ -50,7 +50,7 @@
             <tbody class="divide-y divide-[#454545] text-sm">
                 {% for entry in batting_stats %}
                 <tr data-player-name="{{ entry.player }}">
-                    <td class="py-2.5 pr-2">
+                    <td class="sticky left-0 z-10 bg-[#1B2A22] py-2.5 pr-2">
                         <a href="{% url 'player_detail' entry.player.id %}"
                            class="font-medium text-[#F2F0E6] hover:text-[#E8B23D] transition-colors">{{ entry.player }}</a>
                     </td>

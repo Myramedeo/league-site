@@ -1,10 +1,55 @@
-<div class="space-y-1">
-    {% for standing in standings %}
-    <div class="flex items-center justify-between gap-3 border-b border-[#16241B]/10 px-1 py-2 last:border-b-0">
-        <span class="min-w-0 truncate font-medium">{{ standing.team }}</span>
-        <span class="font-scoreboard shrink-0 text-sm">{{ standing.wins }}-{{ standing.losses }}-{{ standing.ties }}</span>
-    </div>
-    {% empty %}
-    <p class="px-2 py-5 text-center text-sm text-[#16241B]/60">No standings yet.</p>
-    {% endfor %}
+<div class="overflow-hidden rounded-lg border border-[#33493B]/20">
+    <table class="w-full text-sm">
+        <thead class="bg-[#33493B]/10">
+            <tr class="text-[#16241B]/70">
+                <th scope="col" class="px-3 py-2 text-left font-medium">
+                    Team
+                </th>
+                <th scope="col" class="w-10 px-1 py-2 text-center font-scoreboard font-medium">
+                    W
+                </th>
+                <th scope="col" class="w-10 px-1 py-2 text-center font-scoreboard font-medium">
+                    L
+                </th>
+                <th scope="col" class="w-10 px-1 py-2 text-center font-scoreboard font-medium">
+                    T
+                </th>
+                <th scope="col" class="w-14 px-3 py-2 text-right font-scoreboard font-medium">
+                    PCT
+                </th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for standing in standings %}
+            <tr class="border-b border-[#16241B]/10 last:border-b-0">
+                <td class="min-w-0 truncate px-3 py-2.5 font-medium">
+                    {{ standing.team }}
+                </td>
+
+                <td class="px-1 py-2.5 text-center font-scoreboard">
+                    {{ standing.wins }}
+                </td>
+
+                <td class="px-1 py-2.5 text-center font-scoreboard">
+                    {{ standing.losses }}
+                </td>
+
+                <td class="px-1 py-2.5 text-center font-scoreboard">
+                    {{ standing.ties }}
+                </td>
+
+                <td class="px-3 py-2.5 text-right font-scoreboard">
+                    {{ standing.win_pct_display }}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="px-2 py-5 text-center text-sm text-[#16241B]/60">
+                    No standings yet.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>

@@ -10,7 +10,7 @@
     {% include 'core/_season_switcher.html' %}
 </div>
 
-<div class="overflow-hidden rounded-2xl border border-[#33493B]">
+<div class="overflow-hidden rounded-lg border border-[#33493B]">
     <div class="hidden border-b border-[#33493B] bg-[#24372F] px-4 py-3 text-xs font-semibold uppercase tracking-[0.25em] text-[#8FA090] sm:grid sm:grid-cols-[1.2fr_1fr_1.4fr_0.9fr_1fr_0.9fr] sm:gap-4">
         <span>Date</span>
         <span>Time</span>
@@ -21,7 +21,7 @@
     </div>
 
     {% for game in upcoming_games %}
-    <div class="grid gap-3 border-b border-[#33493B] bg-[#1B2A22] px-4 py-4 last:border-b-0 sm:grid-cols-[1.2fr_1fr_1.4fr_0.9fr_1fr_0.9fr] sm:items-center sm:gap-4">
+    <a href="{% url 'game_detail' game.id %}" class="grid gap-3 border-b border-[#33493B] bg-[#1B2A22] px-4 py-4 transition-colors last:border-b-0 hover:bg-[#383838] sm:grid-cols-[1.2fr_1fr_1.4fr_0.9fr_1fr_0.9fr] sm:items-center sm:gap-4">
         <div class="font-scoreboard text-sm uppercase tracking-wide text-[#E8B23D]">
             {{ game.date }}
         </div>
@@ -35,28 +35,18 @@
         </div>
 
         <div class="text-sm text-[#F2F0E6]">
-            <a href="{% url 'game_detail' game.id %}" class="font-medium text-[#F2F0E6] transition-colors hover:text-[#E8B23D]">
-                <span class="font-medium">{{ game.away_team }}</span>
-                <span class="mx-2 text-[#8FA090]">@</span>
-                <span class="font-medium">{{ game.home_team }}</span>
-            </a>
+            <span class="font-medium text-[#F2F0E6]">{{ game.away_team }}</span>
+            <span class="mx-2 text-[#8FA090]">@</span>
+            <span class="font-medium text-[#F2F0E6]">{{ game.home_team }}</span>
         </div>
 
         <div class="text-sm uppercase tracking-wide">
             {% if game.status %}
-                {% if game.status == "W" %}
+                {% if game.status == "F" %}
                     <span class="rounded-md bg-green-500/15 px-3 py-1 font-semibold text-green-400">
                         {{ game.status }}
                     </span>
-                {% elif game.status == "L" %}
-                    <span class="rounded-md bg-red-500/15 px-3 py-1 font-semibold text-red-400">
-                        {{ game.status }}
-                    </span>
-                {% elif game.status == "T" %}
-                    <span class="rounded-md bg-yellow-500/15 px-3 py-1 font-semibold text-yellow-400">
-                        {{ game.status }}
-                    </span>
-                {% elif game.status == "PPD" %}
+                {% elif game.status == "PPD" or game.status == "CAN" %}
                     <span class="rounded-md bg-gray-500/15 px-3 py-1 font-semibold text-gray-400">
                         {{ game.status }}
                     </span>
@@ -80,16 +70,16 @@
 
         <div>
             {% if game.result %}
-            <a href="{% url 'game_detail' game.id %}" class="font-scoreboard w-fit rounded-md bg-[#E8B23D]/15 px-3 py-1 text-sm font-semibold text-[#E8B23D] transition-colors hover:bg-[#E8B23D]/25">
+            <span class="font-scoreboard w-fit rounded-md bg-[#E8B23D]/15 px-3 py-1 text-sm font-semibold text-[#E8B23D]">
                 {{ game.result.away_score }}-{{ game.result.home_score }}
-            </a>
+            </span>
             {% else %}
             <span class="font-scoreboard w-fit rounded-md border border-[#3F5847] px-3 py-1 text-sm uppercase tracking-wide text-[#8FA090]">
                 Upcoming
             </span>
             {% endif %}
         </div>
-    </div>
+    </a>
     {% empty %}
     <div class="bg-[#1B2A22] p-8 text-center text-[#8FA090]">No games scheduled yet.</div>
     {% endfor %}
@@ -100,7 +90,7 @@
     <h2 class="font-display text-2xl font-bold uppercase tracking-tight text-[#F2F0E6]">Completed Games</h2>
 </div>
 
-<div class="overflow-hidden rounded-2xl border border-[#33493B]">
+<div class="overflow-hidden rounded-lg border border-[#33493B]">
     <div class="hidden border-b border-[#33493B] bg-[#24372F] px-4 py-3 text-xs font-semibold uppercase tracking-[0.25em] text-[#8FA090] sm:grid sm:grid-cols-[1.2fr_1fr_1.4fr_0.9fr_1fr_0.9fr] sm:gap-4">
         <span>Date</span>
         <span>Time</span>
@@ -111,7 +101,7 @@
     </div>
 
     {% for game in completed_games %}
-    <div class="grid gap-3 border-b border-[#33493B] bg-[#1B2A22] px-4 py-4 last:border-b-0 sm:grid-cols-[1.2fr_1fr_1.4fr_0.9fr_1fr_0.9fr] sm:items-center sm:gap-4">
+    <a href="{% url 'game_detail' game.id %}" class="grid gap-3 border-b border-[#33493B] bg-[#1B2A22] px-4 py-4 transition-colors last:border-b-0 hover:bg-[#383838] sm:grid-cols-[1.2fr_1fr_1.4fr_0.9fr_1fr_0.9fr] sm:items-center sm:gap-4">
         <div class="font-scoreboard text-sm uppercase tracking-wide text-[#E8B23D]">
             {{ game.date }}
         </div>
@@ -125,11 +115,9 @@
         </div>
 
         <div class="text-sm text-[#F2F0E6]">
-            <a href="{% url 'game_detail' game.id %}" class="font-medium text-[#F2F0E6] transition-colors hover:text-[#E8B23D]">
-                <span class="font-medium">{{ game.away_team }}</span>
-                <span class="mx-2 text-[#8FA090]">@</span>
-                <span class="font-medium">{{ game.home_team }}</span>
-            </a>
+            <span class="font-medium text-[#F2F0E6]">{{ game.away_team }}</span>
+            <span class="mx-2 text-[#8FA090]">@</span>
+            <span class="font-medium text-[#F2F0E6]">{{ game.home_team }}</span>
         </div>
 
         <div class="text-sm uppercase tracking-wide">
@@ -166,16 +154,16 @@
 
         <div>
             {% if game.result %}
-            <a href="{% url 'game_detail' game.id %}" class="font-scoreboard w-fit rounded-md bg-[#E8B23D]/15 px-3 py-1 text-sm font-semibold text-[#E8B23D] transition-colors hover:bg-[#E8B23D]/25">
+            <span class="font-scoreboard w-fit rounded-md bg-[#E8B23D]/15 px-3 py-1 text-sm font-semibold text-[#E8B23D]">
                 {{ game.result.away_score }}-{{ game.result.home_score }}
-            </a>
+            </span>
             {% else %}
             <span class="font-scoreboard w-fit rounded-md border border-[#3F5847] px-3 py-1 text-sm uppercase tracking-wide text-[#8FA090]">
-                Final
+                N/A
             </span>
             {% endif %}
         </div>
-    </div>
+    </a>
     {% endfor %}
 </div>
 {% endif %}

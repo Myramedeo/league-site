@@ -15,7 +15,10 @@
             {% for announcement in announcements %}
             <article class="border-b border-[#33493B] p-5 last:border-b-0 md:p-6">
                 <div class="flex items-start gap-4">
-                    <span class="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#E8B23D]" aria-hidden="true"></span>
+                    <span
+                        class="mt-1 h-2 w-2 shrink-0 rounded-full {% if not announcement.is_recent %}invisible{% endif %} bg-[#E8B23D]"
+                        aria-hidden="true">
+                    </span>
                     <div class="flex-1">
                         <h2 class="font-display text-lg uppercase tracking-wide text-[#F2F0E6]">{{ announcement.title }}</h2>
                         <p class="mt-2 whitespace-pre-line text-[#C9CFC3]">{{ announcement.description }}</p>
@@ -70,7 +73,7 @@
                     <h3 class="font-scoreboard text-xs uppercase tracking-[0.15em] text-[#E8B23D]">Upcoming</h3>
                 </div>
                 {% for game in upcoming_games %}
-                <a href="{% url 'game_detail' game.id %}" class="block border-b border-[#33493B] px-4 py-3 transition-colors hover:bg-[#24372F] last:border-b-0">
+                <a href="{% url 'game_detail' game.id %}" class="block border-b border-[#33493B] px-4 py-3 transition-colors hover:bg-[#383838] last:border-b-0">
                     <div class="flex items-baseline justify-between gap-3">
                         <p class="font-scoreboard text-xs uppercase tracking-wide text-[#E8B23D]">{{ game.date|date:"M j" }}</p>
                         <div class="flex items-baseline gap-3">
@@ -92,13 +95,13 @@
                     <h3 class="font-scoreboard text-xs uppercase tracking-[0.15em] text-[#E8B23D]">Recent Results</h3>
                 </div>
                 {% for game in recent_games %}
-                <a href="{% url 'game_detail' game.id %}" class="flex items-center justify-between gap-3 border-b border-[#33493B] px-4 py-3 transition-colors hover:bg-[#24372F] last:border-b-0">
+                <a href="{% url 'game_detail' game.id %}" class="flex items-center justify-between gap-3 border-b border-[#33493B] px-4 py-3 transition-colors hover:bg-[#383838] last:border-b-0">
                     <div class="min-w-0">
                         <p class="font-scoreboard text-xs uppercase tracking-wide text-[#8FA090]">{{ game.date|date:"M j" }}</p>
                         <p class="mt-1 truncate text-sm text-[#F2F0E6]">{{ game.away_team }} <span class="text-[#8FA090]">@</span> {{ game.home_team }}</p>
                     </div>
                     {% if game.result %}
-                    <span class="font-scoreboard shrink-0 text-sm text-[#E8B23D]">{{ game.result.away_score }}-{{ game.result.home_score }}</span>
+                    <span class="font-scoreboard w-fit rounded-md bg-[#E8B23D]/15 px-3 py-1 text-sm font-semibold text-[#E8B23D] transition-colors">{{ game.result.away_score }}-{{ game.result.home_score }}</span>
                     {% else %}
                     <span class="font-scoreboard shrink-0 text-xs uppercase text-[#8FA090]">Final</span>
                     {% endif %}
@@ -117,9 +120,9 @@
                         {% if season %}{{ season.year }} Season{% else %}No season selected{% endif %}
                     </p>
                 </div>
-                <a href="{% url 'standings' %}" class="font-scoreboard shrink-0 text-sm text-[#E8B23D] hover:underline">Full table &rarr;</a>
+                <a href="{% url 'standings' %}" class="font-scoreboard shrink-0 text-sm text-[#E8B23D] hover:underline">Full standings &rarr;</a>
             </div>
-            <div class="rounded-lg border-4 border-[#0F1D16] bg-[#F4EFE1] p-3 text-[#16241B] shadow-lg">
+            <div class="rounded-lg bg-[#F4EFE1] text-[#16241B] p-2 shadow-lg">
                 {% include 'core/_compact_standings.html' %}
             </div>
             <div class="mt-3">

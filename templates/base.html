@@ -17,6 +17,45 @@
         .font-display { font-family: 'Oswald', sans-serif; }
         .font-scoreboard { font-family: 'IBM Plex Mono', monospace; }
         [x-cloak] { display: none !important; }
+
+        /* Custom scrollbar utility classes */
+        .scrollbar-thin {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(22, 36, 27, 0.3) transparent;
+        }
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background-color: rgba(22, 36, 27, 0.25);
+            border-radius: 9999px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(22, 36, 27, 0.45);
+        }
+
+        .scrollbar-thin-dark {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(242, 240, 230, 0.3) transparent;
+        }
+        .scrollbar-thin-dark::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .scrollbar-thin-dark::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .scrollbar-thin-dark::-webkit-scrollbar-thumb {
+            background-color: rgba(242, 240, 230, 0.25);
+            border-radius: 9999px;
+        }
+        .scrollbar-thin-dark::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(242, 240, 230, 0.45);
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-b from-[#171717] to-[#262626] text-[#F2F0E6]">
@@ -61,7 +100,7 @@
         <div class="mx-auto flex max-w-6xl flex-col gap-5 px-6 md:flex-row md:items-end md:justify-between">
             <div>
                 <p class="font-scoreboard text-xs uppercase tracking-[0.15em] text-[#A3A3A3]">
-                    HOBO 55+ Division &middot; Box scores updated after every game
+                    HOBO 55+ Division &middot; Al Purins & Chris Fraser
                 </p>
             </div>
             <form action="{% url 'newsletter_signup' %}" method="post" class="w-full max-w-md md:w-auto">

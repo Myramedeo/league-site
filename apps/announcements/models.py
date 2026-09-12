@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.db import models
 from django.core.validators import FileExtensionValidator
 
@@ -15,6 +16,10 @@ class Announcement(models.Model):
     active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def is_recent(self):
+        return self.created_at >= timezone.now() - timezone.timedelta(days=7)
 
     class Meta:
         ordering = ['-created_at']
