@@ -106,7 +106,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh issue create \
-            --title "Production backup failed" \
+            --repo "${{ github.repository }}" \
+            --title "Production backup failed — run ${{ github.run_number }}" \
             --body "The scheduled production backup failed.
 
           Repository: ${{ github.repository }}
