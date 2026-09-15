@@ -20,7 +20,7 @@ echo "========================================"
 
 echo "Creating PostgreSQL dump..."
 
-pg_dump \
+/usr/lib/postgresql/18/bin/pg_dump \
     "$DATABASE_URL" \
     --format=custom \
     --no-owner \
