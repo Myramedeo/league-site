@@ -74,21 +74,38 @@ echo "R2 media upload completed."
 
 echo "Verifying R2 media backup..."
 
-REMOTE_COUNT=$(aws s3api list-objects-v2 \
-    --bucket "$R2_BUCKET" \
-    --prefix "media/" \
-    --endpoint-url "$R2_ENDPOINT" \
-    --query 'KeyCount' \
-    --output text)
+VERIFIED_COUNT=0
 
-echo "R2 objects: ${REMOTE_COUNT}"
+while IFS= read -r FILE; do
+    RELATIVE_PATH="${FILE#"$BACKUP_DIR"/}"
+    R2_KEY="media/${RELATIVE_PATH}"
 
-if [ -z "$REMOTE_COUNT" ] || [ "$REMOTE_COUNT" = "None" ] || [ "$REMOTE_COUNT" -eq 0 ]; then
-    echo "ERROR: No media objects found in R2."
+    if aws s3api head-object \
+        --bucket "$R2_BUCKET" \
+        --key "$R2_KEY" \
+        --endpoint-url "$R2_ENDPOINT" \
+        >/dev/null 2>&1; then
+
+        VERIFIED_COUNT=$((VERIFIED_COUNT + 1))
+
+    else
+        echo "ERROR: Missing R2 object:"
+        echo " ${R2_KEY}"
+        exit 1
+    fi
+
+done < <(find "$BACKUP_DIR" -type f)
+
+echo "Verified R2 objects: ${VERIFIED_COUNT}"
+
+if [ "$VERIFIED_COUNT" -ne "$FILE_COUNT" ]; then
+    echo "ERROR: R2 verification count does not match local file count."
+    echo "Local files: ${FILE_COUNT}"
+    echo "R2 objects: ${VERIFIED_COUNT}"
     exit 1
 fi
 
-echo "R2 media backup verified."
+echo "R2 media backup verified successfully."
 
 # --------------------------------------------------
 # Step 6: Cleanup
@@ -100,4 +117,5 @@ echo "========================================"
 echo "Media backup completed successfully"
 echo "========================================"
 echo "Files downloaded: ${FILE_COUNT}"
+echo "Files verified: ${VERIFIED_COUNT}"
 echo "========================================"
