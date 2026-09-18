@@ -1,5 +1,9 @@
 from django.contrib import admin
+from django.contrib.admin import helpers
 from django.contrib import messages
+from django.http import HttpResponseRedirect
+from django.template.response import TemplateResponse
+from django.urls import reverse
 
 from .models import Player, Roster
 from .services import find_duplicate_players, merge_players
@@ -37,10 +41,25 @@ def merge_selected_players(modeladmin, request, queryset):
         return
 
     target = selected[0]
+    if 'confirm_merge' not in request.POST:
+        return TemplateResponse(
+            request,
+            'admin/players/confirm_merge.html',
+            {
+                **modeladmin.admin_site.each_context(request),
+                'opts': modeladmin.model._meta,
+                'players': selected,
+                'target': target,
+                'action_checkbox_name': helpers.ACTION_CHECKBOX_NAME,
+                'cancel_url': reverse('admin:players_player_changelist'),
+            },
+        )
+
     for source in selected[1:]:
         merge_players(target, source)
 
     modeladmin.message_user(request, f'Merged {len(selected) - 1} duplicate player(s) into {target}.', level=messages.SUCCESS)
+    return HttpResponseRedirect(request.get_full_path())
 
 
 @admin.register(Player)
