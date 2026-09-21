@@ -3,32 +3,34 @@ from django.urls import reverse
 
 from players.models import Player, Roster
 
-from teams.models import Season, Team
+from teams.models import Competition, Season, Team
 
 
 class TeamListTests(TestCase):
 	def setUp(self):
 		self.previous_season = Season.objects.create(year=2025)
 		self.current_season = Season.objects.create(year=2026)
+		self.previous_competition = Competition.objects.create(name='2025 Regular Season', season=self.previous_season)
+		self.current_competition = Competition.objects.create(name='2026 Regular Season', season=self.current_season)
 		self.previous_team = Team.objects.create(name='Previous Team')
 		self.current_team = Team.objects.create(name='Current Team')
 		player = Player.objects.create(first_name='Test', last_name='Player')
-		Roster.objects.create(player=player, team=self.previous_team, season=self.previous_season)
-		Roster.objects.create(player=player, team=self.current_team, season=self.current_season)
+		Roster.objects.create(player=player, team=self.previous_team, season=self.previous_season, competition=self.previous_competition)
+		Roster.objects.create(player=player, team=self.current_team, season=self.current_season, competition=self.current_competition)
 
-	def test_team_list_defaults_to_the_latest_season(self):
+	def test_team_list_defaults_to_the_latest_competition(self):
 		response = self.client.get(reverse('team_list'))
 
 		self.assertContains(response, 'Current Team')
 		self.assertNotContains(response, 'Previous Team')
-		self.assertEqual(response.context['season'], self.current_season)
+		self.assertEqual(response.context['competition'], self.current_competition)
 
-	def test_team_list_filters_by_selected_season(self):
-		response = self.client.get(reverse('team_list'), {'season': self.previous_season.year})
+	def test_team_list_filters_by_selected_competition(self):
+		response = self.client.get(reverse('team_list'), {'competition': self.previous_competition.id})
 
 		self.assertContains(response, 'Previous Team')
 		self.assertNotContains(response, 'Current Team')
-		self.assertEqual(response.context['season'], self.previous_season)
+		self.assertEqual(response.context['competition'], self.previous_competition)
 
 	def test_team_list_defaults_to_first_team_and_shows_batting_stats(self):
 		response = self.client.get(reverse('team_list'))
@@ -40,7 +42,7 @@ class TeamListTests(TestCase):
 
 	def test_team_list_switches_team_via_query_param(self):
 		response = self.client.get(reverse('team_list'), {
-			'season': self.previous_season.year,
+			'competition': self.previous_competition.id,
 			'team': self.previous_team.id,
 		})
 

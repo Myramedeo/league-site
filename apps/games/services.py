@@ -61,37 +61,7 @@ def _standings_from_games(games):
     return sorted(standings.values(), key=lambda s: s.win_pct, reverse=True)
 
 
-def compute_standings(season, competition=None, phase=None):
-    """Returns a list of TeamStanding objects, sorted best-to-worst.
-
-    By default this includes every game in the season regardless of
-    competition/phase. Pass `competition` or `phase` (e.g. 'REGULAR',
-    'PLAYOFFS') to restrict standings to a single competition/phase.
-    """
-    games = Game.objects.filter(season=season, result__isnull=False)
-    if competition is not None:
-        games = games.filter(competition=competition)
-    if phase is not None:
-        games = games.filter(competition__phase=phase)
+def compute_standings(competition):
+    """Returns a list of TeamStanding objects, sorted best-to-worst, for the given Competition."""
+    games = Game.objects.filter(competition=competition, result__isnull=False)
     return _standings_from_games(games)
-
-
-def compute_standings_by_phase(season):
-    """Returns a list of {'phase', 'label', 'standings'} dicts, one per phase
-    that has completed games in the season (regular season, playoffs, etc.),
-    in PHASE_CHOICES order, so regular season and playoff standings stay separate."""
-    from teams.models import Competition
-
-    results = []
-    for phase_key, phase_label in Competition.PHASE_CHOICES:
-        games = Game.objects.filter(
-            season=season, result__isnull=False, competition__phase=phase_key,
-        )
-        if not games.exists():
-            continue
-        results.append({
-            'phase': phase_key,
-            'label': phase_label,
-            'standings': _standings_from_games(games),
-        })
-    return results

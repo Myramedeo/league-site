@@ -20,7 +20,7 @@ from django.conf import settings
 from core import views as core_views
 
 from rest_framework.routers import DefaultRouter
-from teams.views import TeamViewSet, SeasonViewSet
+from teams.views import TeamViewSet, SeasonViewSet, CompetitionViewSet
 from players.views import PlayerViewSet
 from games.views import GameViewSet, game_detail
 from core.views import standings_api
@@ -32,6 +32,7 @@ router = DefaultRouter()
 router.register('announcements', AnnouncementViewSet, basename='announcement')
 router.register('teams', TeamViewSet)
 router.register('seasons', SeasonViewSet)
+router.register('competitions', CompetitionViewSet)
 router.register('players', PlayerViewSet)
 router.register('games', GameViewSet)
 

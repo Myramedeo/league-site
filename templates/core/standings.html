@@ -4,15 +4,14 @@
 
 <div class="mb-8 flex flex-wrap items-end justify-between gap-3">
     <div>
-        <p class="font-scoreboard text-xs uppercase tracking-[0.3em] text-[#E8B23D]">{{ season }}</p>
+        <p class="font-scoreboard text-xs uppercase tracking-[0.3em] text-[#E8B23D]">{{ competition }}</p>
         <h1 class="font-display mt-2 text-4xl font-bold uppercase tracking-tight text-[#F2F0E6] md:text-5xl">Standings</h1>
     </div>
-    {% include 'core/_season_switcher.html' %}
+    {% include 'core/_competition_switcher.html' %}
 </div>
 
-{% for group in standings_by_phase %}
+{% if standings %}
 <div class="mb-8 rounded-2xl border-4 border-[#0F1D16] bg-[#F4EFE1] p-4 text-[#16241B] shadow-lg md:p-6">
-    <h2 class="font-display mb-3 text-xl font-bold uppercase tracking-wide text-[#16241B]">{{ group.label }}</h2>
     <div class="overflow-x-auto">
         <table class="w-full border-collapse text-left">
             <thead>
@@ -27,7 +26,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for s in group.standings %}
+                {% for s in standings %}
                 <tr class="border-b border-[#16241B]/10 hover:bg-black/5">
                     <td class="px-3 py-2.5 font-medium">{{ s.team }}</td>
                     <td class="font-scoreboard px-3 py-2.5 text-right">{{ s.wins }}</td>
@@ -42,10 +41,10 @@
         </table>
     </div>
 </div>
-{% empty %}
+{% else %}
 <div class="rounded-2xl border-4 border-[#0F1D16] bg-[#F4EFE1] p-4 text-center text-[#16241B]/60 shadow-lg md:p-6">
     No standings yet — check back once games have been played.
 </div>
-{% endfor %}
+{% endif %}
 
 {% endblock %}

@@ -1,13 +1,13 @@
-from teams.models import Season
+from teams.models import Competition
 
 
-def get_selected_season(request):
-    """Resolve the season to display from the `?season=<year>` query param,
-    falling back to the most recent season if absent or invalid."""
-    year = request.GET.get('season')
-    season = None
-    if year:
-        season = Season.objects.filter(year=year).first()
-    if season is None:
-        season = Season.objects.order_by('-year').first()
-    return season
+def get_selected_competition(request):
+    """Resolve the competition to display from the `?competition=<id>` query param,
+    falling back to the most recently created competition if absent or invalid."""
+    competition_id = request.GET.get('competition')
+    competition = None
+    if competition_id:
+        competition = Competition.objects.select_related('season').filter(id=competition_id).first()
+    if competition is None:
+        competition = Competition.objects.select_related('season').order_by('-id').first()
+    return competition

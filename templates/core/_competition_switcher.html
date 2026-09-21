@@ -1,0 +1,12 @@
+<!-- Competition switcher: submits ?competition=<id> via GET to the current page -->
+{% if all_competitions %}
+<form method="get" class="inline-block">
+    <label for="competition-select" class="sr-only">Competition</label>
+    <select id="competition-select" name="competition" onchange="this.form.submit()"
+        class="rounded-md border border-[#33493B] bg-[#0F1D16] px-2 py-1 font-scoreboard text-xs uppercase tracking-wide text-[#F2F0E6]">
+        {% for c in all_competitions %}
+        <option value="{{ c.id }}" {% if competition and c.id == competition.id %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+    </select>
+</form>
+{% endif %}

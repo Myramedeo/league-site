@@ -10,7 +10,7 @@ from stats.models import BattingStatLine
 from players.admin import merge_selected_players
 from players.models import LegacyPlayerIdentity, Player, PlayerMergeAudit, Roster
 from players.services import find_duplicate_players, merge_players, undo_player_merge
-from teams.models import Season, Team
+from teams.models import Competition, Season, Team
 
 
 class PlayerDetailTests(TestCase):
@@ -19,24 +19,30 @@ class PlayerDetailTests(TestCase):
 		self.team = Team.objects.create(name='Test Team')
 		self.older_season = Season.objects.create(year=2025)
 		self.newer_season = Season.objects.create(year=2026)
+		self.older_competition = Competition.objects.create(name='2025 Regular Season', season=self.older_season)
+		self.newer_competition = Competition.objects.create(name='2026 Regular Season', season=self.newer_season)
 
-	def create_stat_line(self, season, **stats):
+	def create_stat_line(self, season, competition, **stats):
 		game = Game.objects.create(
 			season=season,
+			competition=competition,
 			home_team=self.team,
 			away_team=Team.objects.create(name=f'Away {season.year}'),
 			date=f'{season.year}-06-01',
 		)
 		return BattingStatLine.objects.create(player=self.player, game=game, **stats)
 
-	def test_player_detail_groups_stats_by_season_and_adds_overall_row(self):
-		self.create_stat_line(self.older_season, at_bats=10, hits=3, singles=2, doubles=1, rbis=2)
-		self.create_stat_line(self.newer_season, at_bats=20, hits=10, singles=8, doubles=2, rbis=4)
+	def test_player_detail_groups_stats_by_competition_and_adds_overall_row(self):
+		self.create_stat_line(self.older_season, self.older_competition, at_bats=10, hits=3, singles=2, doubles=1, rbis=2)
+		self.create_stat_line(self.newer_season, self.newer_competition, at_bats=20, hits=10, singles=8, doubles=2, rbis=4)
 
 		response = self.client.get(reverse('player_detail', args=[self.player.id]))
 
 		stats = response.context['batting_stats']
-		self.assertEqual([row['season'] for row in stats], ['2026', '2025', 'Overall'])
+		self.assertEqual(
+			[row['competition'] for row in stats],
+			['2026 Regular Season', '2025 Regular Season', 'Overall'],
+		)
 		self.assertEqual(stats[-1]['at_bats'], 30)
 		self.assertEqual(stats[-1]['hits'], 13)
 		self.assertEqual(stats[-1]['batting_average'], 13 / 30)

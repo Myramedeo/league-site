@@ -7,7 +7,7 @@ from unittest.mock import patch
 from announcements.models import Announcement
 from core.models import Article
 from games.models import Game, GameResult
-from teams.models import Season, Team
+from teams.models import Competition, Season, Team
 
 
 class HomePageTests(TestCase):
@@ -18,7 +18,7 @@ class HomePageTests(TestCase):
         self.assertTemplateUsed(response, 'core/home.html')
         self.assertContains(response, 'Announcements')
         self.assertContains(response, 'No announcements yet')
-        self.assertContains(response, 'No season selected')
+        self.assertContains(response, 'No competition selected')
         self.assertNotContains(response, 'Admin panel')
 
     def test_homepage_shows_admin_link_to_logged_in_users(self):
@@ -36,23 +36,27 @@ class HomePageTests(TestCase):
     @patch('core.views.timezone.localdate', return_value=date(2026, 6, 15))
     def test_homepage_provides_date_aware_games(self, localdate):
         season = Season.objects.create(year=2026)
+        competition = Competition.objects.create(name='2026 Regular Season', season=season)
         hawks = Team.objects.create(name='Hawks')
         bears = Team.objects.create(name='Bears')
         lions = Team.objects.create(name='Lions')
         upcoming_game = Game.objects.create(
             season=season,
+            competition=competition,
             home_team=hawks,
             away_team=bears,
             date=date(2026, 6, 20),
         )
         old_upcoming_game = Game.objects.create(
             season=season,
+            competition=competition,
             home_team=hawks,
             away_team=lions,
             date=date(2026, 6, 10),
         )
         recent_game = Game.objects.create(
             season=season,
+            competition=competition,
             home_team=lions,
             away_team=hawks,
             date=date(2026, 6, 14),
@@ -65,6 +69,7 @@ class HomePageTests(TestCase):
         )
         Game.objects.create(
             season=season,
+            competition=competition,
             home_team=bears,
             away_team=lions,
             date=date(2026, 6, 13),
@@ -84,7 +89,8 @@ class HomePageTests(TestCase):
 
     @patch('core.views.compute_standings')
     def test_homepage_renders_announcements_and_compact_standings(self, compute_standings):
-        Season.objects.create(year=2026)
+        season = Season.objects.create(year=2026)
+        Competition.objects.create(name='2026 Regular Season', season=season)
         Announcement.objects.create(
             title='Opening Day',
             description='The season begins this weekend.',
@@ -110,7 +116,7 @@ class HomePageTests(TestCase):
             response.content.find(b'Rain Delay'),
             response.content.find(b'Opening Day'),
         )
-        self.assertContains(response, '2026 Season')
+        self.assertContains(response, '2026 Regular Season')
         self.assertContains(response, 'Hawks')
         self.assertContains(response, '7-2-1')
         for label in ['Teams', 'Standings', 'Stats', 'Schedule']:
@@ -119,10 +125,12 @@ class HomePageTests(TestCase):
 
     def test_schedule_places_cancelled_games_with_completed_games(self):
         season = Season.objects.create(year=2026)
+        competition = Competition.objects.create(name='2026 Regular Season', season=season)
         hawks = Team.objects.create(name='Hawks')
         bears = Team.objects.create(name='Bears')
         cancelled_game = Game.objects.create(
             season=season,
+            competition=competition,
             home_team=hawks,
             away_team=bears,
             date=date(2026, 6, 10),

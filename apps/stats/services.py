@@ -2,7 +2,7 @@ from django.db.models import Sum, F, Q
 from .models import BattingStatLine, PitchingStatLine
 
 
-def _batting_totals_row(totals, season):
+def _batting_totals_row(totals, label):
     at_bats = totals.get('at_bats') or 0
     hits = totals.get('hits') or 0
     walks = totals.get('walks') or 0
@@ -22,7 +22,7 @@ def _batting_totals_row(totals, season):
     slugging_percentage = total_bases / at_bats if at_bats else 0.0
 
     return {
-        'season': season,
+        'competition': label,
         'at_bats': at_bats,
         'runs': totals.get('runs') or 0,
         'hits': hits,
@@ -40,24 +40,24 @@ def _batting_totals_row(totals, season):
 
 
 def player_batting_stats(player):
-    """Returns a player's batting totals by season, followed by career totals."""
+    """Returns a player's batting totals by competition, followed by career totals."""
     fields = (
         'at_bats', 'runs', 'hits', 'rbis', 'walks', 'strikeouts',
         'hit_by_pitch', 'sacrifices', 'singles', 'doubles', 'triples',
         'home_runs',
     )
-    season_rows = (
+    # Rows with no competition assigned (legacy gaps) are excluded here but still count toward Overall.
+    competition_rows = (
         BattingStatLine.objects
-        .filter(player=player)
-        .values('game__season__year', 'game__season__name')
+        .filter(player=player, game__competition__isnull=False)
+        .values('game__competition__id', 'game__competition__name', 'game__competition__season__year')
         .annotate(**{field: Sum(field) for field in fields})
-        .order_by('-game__season__year')
+        .order_by('-game__competition__season__year', 'game__competition__name')
     )
 
     results = []
-    for row in season_rows:
-        season = row['game__season__name'] or str(row['game__season__year'])
-        results.append(_batting_totals_row(row, season))
+    for row in competition_rows:
+        results.append(_batting_totals_row(row, row['game__competition__name']))
 
     overall_totals = BattingStatLine.objects.filter(player=player).aggregate(
         **{field: Sum(field) for field in fields}
@@ -68,12 +68,12 @@ def player_batting_stats(player):
     return results
 
 
-def team_batting_stats(team, season):
-    """Returns each roster player's season batting totals for a team, in roster order, zero-filled if no lines recorded."""
+def team_batting_stats(team, competition):
+    """Returns each roster player's competition batting totals for a team, in roster order, zero-filled if no lines recorded."""
     from players.models import Roster
 
     roster_entries = (
-        Roster.objects.filter(team=team, season=season, show_in_team_list=True)
+        Roster.objects.filter(team=team, competition=competition, show_in_team_list=True)
         .select_related('player')
         .order_by('player__last_name', 'player__first_name')
     )
@@ -89,7 +89,7 @@ def team_batting_stats(team, season):
         row['player_id']: row
         for row in (
             BattingStatLine.objects
-            .filter(game__season=season, player_id__in=seen_player_ids)
+            .filter(game__competition=competition, player_id__in=seen_player_ids)
             .values('player_id')
             .annotate(
                 at_bats=Sum('at_bats'),
@@ -148,11 +148,11 @@ def team_batting_stats(team, season):
     return results
 
 
-def batting_leaderboard(season, min_at_bats=10):
-    """Returns players sorted by season batting average, descending."""
+def batting_leaderboard(competition, min_at_bats=10):
+    """Returns players sorted by competition batting average, descending."""
     lines = (
         BattingStatLine.objects
-        .filter(game__season=season)
+        .filter(game__competition=competition)
         .values('player__id', 'player__first_name', 'player__last_name')
         .annotate(
             total_at_bats=Sum('at_bats'),
@@ -169,11 +169,11 @@ def batting_leaderboard(season, min_at_bats=10):
     return sorted(results, key=lambda r: r['batting_average'], reverse=True)
 
 
-def rbi_leaderboard(season):
-    """Returns players sorted by total season RBIs, descending."""
+def rbi_leaderboard(competition):
+    """Returns players sorted by total competition RBIs, descending."""
     lines = (
         BattingStatLine.objects
-        .filter(game__season=season)
+        .filter(game__competition=competition)
         .values('player__id', 'player__first_name', 'player__last_name')
         .annotate(total_rbis=Sum('rbis'))
     )
@@ -181,11 +181,11 @@ def rbi_leaderboard(season):
     return sorted(lines, key=lambda r: r['total_rbis'], reverse=True)
 
 
-def runs_leaderboard(season):
-    """Returns players sorted by total season runs scored, descending."""
+def runs_leaderboard(competition):
+    """Returns players sorted by total competition runs scored, descending."""
     lines = (
         BattingStatLine.objects
-        .filter(game__season=season)
+        .filter(game__competition=competition)
         .values('player__id', 'player__first_name', 'player__last_name')
         .annotate(total_runs=Sum('runs'))
     )
@@ -193,11 +193,11 @@ def runs_leaderboard(season):
     return sorted(lines, key=lambda r: r['total_runs'], reverse=True)
 
 
-def era_leaderboard(season, min_innings=5):
-    """Returns pitchers sorted by season ERA, ascending (lower is better)."""
+def era_leaderboard(competition, min_innings=5):
+    """Returns pitchers sorted by competition ERA, ascending (lower is better)."""
     lines = (
         PitchingStatLine.objects
-        .filter(game__season=season)
+        .filter(game__competition=competition)
         .values('player__id', 'player__first_name', 'player__last_name')
         .annotate(
             total_innings=Sum('innings_pitched'),

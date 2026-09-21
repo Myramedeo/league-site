@@ -7,7 +7,7 @@ from django.urls import reverse
 from game_entry.models import BattingSlot, GameScorecard
 from players.models import Player, Roster
 from stats.models import BattingStatLine
-from teams.models import Season, Team
+from teams.models import Competition, Season, Team
 from games.admin import InningScoreInline
 from games.models import Game, GameResult, InningScore
 from games.serializers import GameSerializer
@@ -157,17 +157,18 @@ class GameResultTests(TestCase):
 class StandingsTests(TestCase):
     def setUp(self):
         self.season = Season.objects.create(year=2026)
+        self.competition = Competition.objects.create(name='2026 Regular Season', season=self.season)
         self.team_a = Team.objects.create(name="Hawks")
         self.team_b = Team.objects.create(name="Owls")
 
     def test_win_loss_recorded_correctly(self):
         game = Game.objects.create(
-            season=self.season, home_team=self.team_a,
+            season=self.season, competition=self.competition, home_team=self.team_a,
             away_team=self.team_b, date="2026-06-01"
         )
         GameResult.objects.create(game=game, final_home_score=5, final_away_score=2)
 
-        standings = compute_standings(self.season)
+        standings = compute_standings(self.competition)
         hawks = next(s for s in standings if s.team == self.team_a)
         owls = next(s for s in standings if s.team == self.team_b)
 
@@ -182,12 +183,12 @@ class StandingsTests(TestCase):
 
     def test_tie_counted_as_half_win(self):
         game = Game.objects.create(
-            season=self.season, home_team=self.team_a,
+            season=self.season, competition=self.competition, home_team=self.team_a,
             away_team=self.team_b, date="2026-06-02"
         )
         GameResult.objects.create(game=game, final_home_score=3, final_away_score=3)
 
-        standings = compute_standings(self.season)
+        standings = compute_standings(self.competition)
         hawks = next(s for s in standings if s.team == self.team_a)
 
         self.assertEqual(hawks.ties, 1)

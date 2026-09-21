@@ -12,9 +12,9 @@ class GameViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        season_id = self.request.query_params.get('season')
-        if season_id:
-            qs = qs.filter(season_id=season_id)
+        competition_id = self.request.query_params.get('competition')
+        if competition_id:
+            qs = qs.filter(competition_id=competition_id)
         return qs
 
 

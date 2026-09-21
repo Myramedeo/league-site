@@ -1,11 +1,11 @@
 from django.shortcuts import get_object_or_404, render
-from teams.models import Season
-from games.services import compute_standings, compute_standings_by_phase
+from teams.models import Competition
+from games.services import compute_standings
 from stats.services import batting_leaderboard, rbi_leaderboard, runs_leaderboard
 from games.models import Game
 from announcements.models import Announcement
 from .models import Article
-from .utils import get_selected_season
+from .utils import get_selected_competition
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -16,36 +16,25 @@ from django.utils import timezone
 
 @api_view(['GET'])
 def standings_api(request):
-    season_year = request.query_params.get('season')
-    season = (
-        Season.objects.get(year=season_year) if season_year
-        else Season.objects.order_by('-year').first()
+    competition_id = request.query_params.get('competition')
+    competition = (
+        Competition.objects.filter(id=competition_id).first() if competition_id
+        else Competition.objects.order_by('-id').first()
     )
-    if not season:
+    if not competition:
         return Response([])
 
-    phase = request.query_params.get('phase')
-    if phase:
-        standings = compute_standings(season, phase=phase.upper())
-        serializer = TeamStandingSerializer(standings, many=True)
-        return Response(serializer.data)
-
-    return Response([
-        {
-            'phase': group['phase'],
-            'label': group['label'],
-            'standings': TeamStandingSerializer(group['standings'], many=True).data,
-        }
-        for group in compute_standings_by_phase(season)
-    ])
+    standings = compute_standings(competition)
+    serializer = TeamStandingSerializer(standings, many=True)
+    return Response(serializer.data)
 
 def schedule(request):
-    season = get_selected_season(request)
+    competition = get_selected_competition(request)
     games = (
-        Game.objects.filter(season=season)
+        Game.objects.filter(competition=competition)
         .select_related('home_team', 'away_team', 'result')
         .order_by('date')
-    ) if season else []
+    ) if competition else []
     completed_statuses = ('F', 'W', 'L', 'T', 'FFT', 'PPD', 'CAN')
     upcoming_games = [g for g in games if g.status not in completed_statuses]
     completed_games = sorted(
@@ -54,31 +43,31 @@ def schedule(request):
         reverse=True,
     )
     return render(request, 'core/schedule.html', {
-        'season': season,
+        'competition': competition,
         'upcoming_games': upcoming_games,
         'completed_games': completed_games,
-        'all_seasons': Season.objects.order_by('-year'),
+        'all_competitions': Competition.objects.select_related('season'),
     })
 
 @cache_page(60 * 15)
 def leaderboards(request):
-    season = get_selected_season(request)
+    competition = get_selected_competition(request)
     return render(request, 'core/leaderboards.html', {
-        'season': season,
-        'batting_leaders': batting_leaderboard(season, min_at_bats=5) if season else [],
-        'rbi_leaders': rbi_leaderboard(season) if season else [],
-        'runs_leaders': runs_leaderboard(season) if season else [],
-        'all_seasons': Season.objects.order_by('-year'),
+        'competition': competition,
+        'batting_leaders': batting_leaderboard(competition, min_at_bats=5) if competition else [],
+        'rbi_leaders': rbi_leaderboard(competition) if competition else [],
+        'runs_leaders': runs_leaderboard(competition) if competition else [],
+        'all_competitions': Competition.objects.select_related('season'),
     })
 
 def home(request):
-    season = get_selected_season(request)
-    standings_list = compute_standings(season) if season else []
+    competition = get_selected_competition(request)
+    standings_list = compute_standings(competition) if competition else []
     announcements = Announcement.objects.filter(active=True)
     today = timezone.localdate()
-    games = Game.objects.filter(season=season).select_related(
+    games = Game.objects.filter(competition=competition).select_related(
         'home_team', 'away_team', 'result'
-    ) if season else Game.objects.none()
+    ) if competition else Game.objects.none()
     upcoming_games = games.filter(date__gte=today, status='TBP').order_by(
         'date', 'scheduled_time'
     )[:3]
@@ -87,12 +76,12 @@ def home(request):
         status__in=('F', 'W', 'L', 'T', 'FFT'),
     ).order_by('-date', '-scheduled_time')[:3]
     return render(request, 'core/home.html', {
-        'season': season,
+        'competition': competition,
         'standings': standings_list,
         'announcements': announcements,
         'upcoming_games': upcoming_games,
         'recent_games': recent_games,
-        'all_seasons': Season.objects.order_by('-year'),
+        'all_competitions': Competition.objects.select_related('season'),
     })
 
 def article_list(request):
@@ -109,10 +98,10 @@ def article_detail(request, slug):
 
 @cache_page(60 * 15)  # 15 minutes
 def standings(request):
-    season = get_selected_season(request)
-    standings_by_phase = compute_standings_by_phase(season) if season else []
+    competition = get_selected_competition(request)
+    standings_list = compute_standings(competition) if competition else []
     return render(request, 'core/standings.html', {
-        'season': season,
-        'standings_by_phase': standings_by_phase,
-        'all_seasons': Season.objects.order_by('-year'),
+        'competition': competition,
+        'standings': standings_list,
+        'all_competitions': Competition.objects.select_related('season'),
     })

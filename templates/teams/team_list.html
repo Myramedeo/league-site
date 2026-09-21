@@ -4,20 +4,20 @@
 
 <div class="mb-8 flex flex-wrap items-end justify-between gap-3">
     <div>
-        <p class="font-scoreboard text-xs uppercase tracking-[0.3em] text-[#E8B23D]">{{ season }}</p>
+        <p class="font-scoreboard text-xs uppercase tracking-[0.3em] text-[#E8B23D]">{{ competition }}</p>
         <h1 class="font-display mt-2 text-4xl font-bold uppercase tracking-tight text-[#F2F0E6] md:text-5xl">Teams</h1>
     </div>
     <div class="flex flex-wrap items-center gap-3">
         <input type="search" id="player-search" placeholder="Find a player..."
             class="rounded-md border border-[#33493B] bg-[#0F1D16] px-2 py-1 font-scoreboard text-xs uppercase tracking-wide text-[#F2F0E6] placeholder:text-[#8FA090] focus:border-[#E8B23D] focus:outline-none">
-        {% include 'core/_season_switcher.html' %}
+        {% include 'core/_competition_switcher.html' %}
     </div>
 </div>
 
 {% if teams %}
 <div class="mb-4 flex flex-wrap gap-2">
     {% for team in teams %}
-    <a href="?season={{ season.year }}&team={{ team.id }}"
+    <a href="?competition={{ competition.id }}&team={{ team.id }}"
        class="rounded-full px-4 py-1.5 font-scoreboard text-xs uppercase tracking-wide transition-colors
               {% if selected_team and team.id == selected_team.id %}bg-[#E8B23D] text-[#0F1D16]{% else %}border border-[#33493B] bg-[#1B2A22] text-[#F2F0E6] hover:border-[#E8B23D]{% endif %}">
         {{ team.name }}
