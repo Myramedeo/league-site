@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 
-from players.models import Player
+from players.models import Player, PlayerMergeAudit
 from players.services import merge_players
 
 
@@ -35,7 +35,12 @@ class Command(BaseCommand):
             ))
             return
 
+        source_player_id = source_player.pk
         merged = merge_players(target_player, source_player)
+        audit = PlayerMergeAudit.objects.get(
+            target_player_id=merged.pk,
+            source_player_id=source_player_id,
+        )
         self.stdout.write(self.style.SUCCESS(
-            f'Merged {source_player} into {merged}.'
+            f'Merged {source_player} into {merged}. Audit ID: {audit.pk}.'
         ))

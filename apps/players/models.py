@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from teams.models import Competition, Team, Season
 
@@ -46,3 +47,37 @@ class LegacyPlayerIdentity(models.Model):
 
     def __str__(self):
         return f'{self.source_first_name} {self.source_last_name} ({self.legacy_player_id})'
+
+
+class PlayerMergeAudit(models.Model):
+    target_player = models.ForeignKey(
+        Player,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='merge_targets',
+    )
+    source_player_id = models.PositiveBigIntegerField()
+    target_name = models.CharField(max_length=101)
+    source_name = models.CharField(max_length=101)
+    before_state = models.JSONField()
+    after_state = models.JSONField()
+    merged_at = models.DateTimeField(auto_now_add=True)
+    undone_at = models.DateTimeField(null=True, blank=True)
+    merged_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='player_merges',
+    )
+
+    class Meta:
+        ordering = ['-merged_at']
+
+    @property
+    def is_undone(self):
+        return self.undone_at is not None
+
+    def __str__(self):
+        return f'{self.source_name} into {self.target_name} ({self.merged_at:%Y-%m-%d %H:%M})'

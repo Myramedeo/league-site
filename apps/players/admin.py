@@ -5,8 +5,8 @@ from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
 
-from .models import Player, Roster
-from .services import find_duplicate_players, merge_players
+from .models import Player, PlayerMergeAudit, Roster
+from .services import find_duplicate_players, merge_players, undo_player_merge
 
 
 class RosterInline(admin.TabularInline):
@@ -55,10 +55,20 @@ def merge_selected_players(modeladmin, request, queryset):
             },
         )
 
+    audit_ids = []
     for source in selected[1:]:
-        merge_players(target, source)
+        source_id = source.pk
+        merge_players(target, source, merged_by=request.user)
+        audit_ids.append(str(PlayerMergeAudit.objects.get(
+            target_player_id=target.pk,
+            source_player_id=source_id,
+        ).pk))
 
-    modeladmin.message_user(request, f'Merged {len(selected) - 1} duplicate player(s) into {target}.', level=messages.SUCCESS)
+    modeladmin.message_user(
+        request,
+        f'Merged {len(selected) - 1} duplicate player(s) into {target}. Audit ID(s): {", ".join(audit_ids)}.',
+        level=messages.SUCCESS,
+    )
     return HttpResponseRedirect(request.get_full_path())
 
 
@@ -74,3 +84,26 @@ class PlayerAdmin(admin.ModelAdmin):
 class RosterAdmin(admin.ModelAdmin):
     list_display = ('player', 'team', 'season', 'show_in_team_list')
     list_filter = ('season', 'team')
+
+
+@admin.action(description='Undo selected player merge')
+def undo_selected_player_merges(modeladmin, request, queryset):
+    for audit in queryset:
+        try:
+            undo_player_merge(audit)
+        except ValueError as error:
+            modeladmin.message_user(request, f'{audit}: {error}', level=messages.ERROR)
+            continue
+        modeladmin.message_user(request, f'Undid merge: {audit}.', level=messages.SUCCESS)
+
+
+@admin.register(PlayerMergeAudit)
+class PlayerMergeAuditAdmin(admin.ModelAdmin):
+    list_display = ('source_name', 'target_name', 'merged_at', 'merged_by', 'undone_at')
+    list_filter = ('undone_at', 'merged_at')
+    search_fields = ('source_name', 'target_name')
+    readonly_fields = (
+        'target_player', 'source_player_id', 'target_name', 'source_name',
+        'before_state', 'after_state', 'merged_at', 'undone_at', 'merged_by',
+    )
+    actions = [undo_selected_player_merges]

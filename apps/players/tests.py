@@ -4,8 +4,8 @@ from django.urls import reverse
 from games.models import Game
 from stats.models import BattingStatLine
 
-from players.models import LegacyPlayerIdentity, Player, Roster
-from players.services import find_duplicate_players, merge_players
+from players.models import LegacyPlayerIdentity, Player, PlayerMergeAudit, Roster
+from players.services import find_duplicate_players, merge_players, undo_player_merge
 from teams.models import Season, Team
 
 
@@ -78,3 +78,52 @@ class PlayerMergeTests(TestCase):
 		self.assertEqual(Roster.objects.filter(player=target, team=team, season=season).count(), 1)
 		self.assertEqual(Roster.objects.filter(player=target, team=other_team, season=season).count(), 1)
 		self.assertEqual(LegacyPlayerIdentity.objects.filter(player=target).count(), 1)
+		self.assertEqual(PlayerMergeAudit.objects.count(), 1)
+
+	def test_undo_merge_restores_original_records(self):
+		season = Season.objects.create(year=2026)
+		target = Player.objects.create(first_name='John', last_name='Smith')
+		source = Player.objects.create(first_name='Johnny', last_name='Smith')
+		source_id = source.pk
+		team = Team.objects.create(name='Hawks')
+		other_team = Team.objects.create(name='Owls')
+		Roster.objects.create(player=target, team=team, season=season)
+		Roster.objects.create(player=source, team=other_team, season=season)
+		identity = LegacyPlayerIdentity.objects.create(
+			legacy_player_id=202,
+			player=source,
+			source_first_name='Johnny',
+			source_last_name='Smith',
+		)
+		game = Game.objects.create(season=season, home_team=team, away_team=other_team, date='2026-06-01')
+		BattingStatLine.objects.create(
+			player=source,
+			game=game,
+			at_bats=3,
+			hits=1,
+			singles=1,
+		)
+
+		merge_players(target, source)
+		audit = PlayerMergeAudit.objects.get()
+		undo_player_merge(audit)
+
+		self.assertTrue(Player.objects.filter(pk=target.pk, first_name='John').exists())
+		self.assertTrue(Player.objects.filter(pk=source_id, first_name='Johnny').exists())
+		self.assertTrue(Roster.objects.filter(player_id=source_id, team=other_team, season=season).exists())
+		self.assertTrue(BattingStatLine.objects.filter(player_id=source_id, game=game, at_bats=3).exists())
+		self.assertEqual(LegacyPlayerIdentity.objects.get(pk=identity.pk).player_id, source_id)
+		self.assertIsNotNone(PlayerMergeAudit.objects.get(pk=audit.pk).undone_at)
+
+	def test_undo_merge_refuses_changed_data(self):
+		target = Player.objects.create(first_name='John', last_name='Smith')
+		source = Player.objects.create(first_name='Johnny', last_name='Smith')
+
+		merge_players(target, source)
+		audit = PlayerMergeAudit.objects.get()
+		Player.objects.filter(pk=target.pk).update(last_name='Changed')
+
+		with self.assertRaisesMessage(ValueError, 'data has changed'):
+			undo_player_merge(audit)
+
+		self.assertFalse(Player.objects.filter(pk=source.pk).exists())

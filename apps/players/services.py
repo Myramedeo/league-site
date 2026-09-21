@@ -1,9 +1,12 @@
+import json
 from difflib import SequenceMatcher
 
 from django.db import transaction
+from django.core.serializers.json import DjangoJSONEncoder
+from django.utils import timezone
 
 from game_entry.models import BattingSlot, ScorecardEntry
-from players.models import LegacyPlayerIdentity, Player, Roster
+from players.models import LegacyPlayerIdentity, Player, PlayerMergeAudit, Roster
 from stats.models import BattingStatLine, PitchingStatLine
 
 BATTLING_FIELDS = [
@@ -76,14 +79,95 @@ def find_duplicate_players(players=None, threshold=0.8):
     return matches
 
 
+AUDIT_MODELS = (
+    Player,
+    BattingStatLine,
+    PitchingStatLine,
+    Roster,
+    BattingSlot,
+    ScorecardEntry,
+    LegacyPlayerIdentity,
+)
+
+
+def _field_values(instance):
+    return {
+        field.attname: getattr(instance, field.attname)
+        for field in instance._meta.concrete_fields
+    }
+
+
+def _snapshot_player_data(player_ids):
+    player_ids = set(player_ids)
+    rows = []
+    for model in AUDIT_MODELS:
+        if model is Player:
+            queryset = model.objects.filter(id__in=player_ids)
+        elif model is ScorecardEntry:
+            slot_ids = BattingSlot.objects.filter(player_id__in=player_ids).values('id')
+            queryset = model.objects.filter(slot_id__in=slot_ids)
+        else:
+            queryset = model.objects.filter(player_id__in=player_ids)
+
+        for instance in queryset.order_by('pk'):
+            rows.append({
+                'model': model._meta.label,
+                'pk': instance.pk,
+                'values': _field_values(instance),
+            })
+
+    encoded = DjangoJSONEncoder().encode(sorted(rows, key=lambda row: (row['model'], row['pk'])))
+    return encoded
+
+
+def _restore_snapshot(snapshot):
+    rows = json.loads(snapshot)
+
+    for model in (Player, Roster, BattingStatLine, PitchingStatLine, BattingSlot, ScorecardEntry, LegacyPlayerIdentity):
+        for row in rows:
+            if row['model'] != model._meta.label:
+                continue
+            model.objects.update_or_create(pk=row['pk'], defaults=row['values'])
+
+
 @transaction.atomic
-def merge_players(target_player, source_player, keep_jersey=True):
+def undo_player_merge(audit):
+    """Restore a merge only if its affected records are unchanged since merging."""
+    audit = PlayerMergeAudit.objects.select_for_update().get(pk=audit.pk)
+    if audit.is_undone:
+        raise ValueError('This player merge has already been undone.')
+
+    target_player_id = audit.target_player_id
+    current_state = _snapshot_player_data([target_player_id, audit.source_player_id])
+    if current_state != audit.after_state:
+        raise ValueError('The merged player data has changed since this merge; undo was not performed.')
+
+    current_rows = json.loads(current_state)
+    for model in (ScorecardEntry, BattingSlot, BattingStatLine, PitchingStatLine, Roster, LegacyPlayerIdentity, Player):
+        model.objects.filter(pk__in=[
+            row['pk'] for row in current_rows if row['model'] == model._meta.label
+        ]).delete()
+
+    _restore_snapshot(audit.before_state)
+    audit.undone_at = timezone.now()
+    audit.target_player_id = target_player_id
+    audit.save(update_fields=['undone_at', 'target_player'])
+    return audit
+
+
+@transaction.atomic
+def merge_players(target_player, source_player, keep_jersey=True, merged_by=None):
     """
     Merge source_player into target_player while preserving all related game data.
     The source player is deleted at the end of the transaction.
     """
     if target_player.id == source_player.id:
         return target_player
+
+    before_state = _snapshot_player_data([target_player.id, source_player.id])
+    target_name = str(target_player)
+    source_name = str(source_player)
+    source_player_id = source_player.id
 
     if keep_jersey and not target_player.jersey_number and source_player.jersey_number:
         target_player.jersey_number = source_player.jersey_number
@@ -148,4 +232,13 @@ def merge_players(target_player, source_player, keep_jersey=True):
     LegacyPlayerIdentity.objects.filter(player=source_player).update(player=target_player)
 
     source_player.delete()
+    PlayerMergeAudit.objects.create(
+        target_player_id=target_player.id,
+        source_player_id=source_player_id,
+        target_name=target_name,
+        source_name=source_name,
+        before_state=before_state,
+        after_state=_snapshot_player_data([target_player.id, source_player.id]),
+        merged_by=merged_by,
+    )
     return target_player
