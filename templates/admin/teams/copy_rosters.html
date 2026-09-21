@@ -1,0 +1,32 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<div id="content-main">
+    <h1>{% trans "Copy Regular Season rosters" %}</h1>
+    <p>
+        Choose the Regular Season competition whose roster records should be copied into
+        <strong>{{ target }}</strong>. Existing roster records will be skipped.
+    </p>
+
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="copy_regular_rosters_to_playoffs">
+        <input type="hidden" name="select_across" value="0">
+        <input type="hidden" name="_selected_action" value="{{ selected_action }}">
+
+        <label for="source_competition_id">Regular Season competition:</label>
+        <select id="source_competition_id" name="source_competition_id" required>
+            <option value="">---------</option>
+            {% for competition in regular_competitions %}
+            <option value="{{ competition.pk }}">{{ competition }}</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" name="confirm_copy" value="1" class="default">
+            {% trans "Copy rosters" %}
+        </button>
+        <a href="{{ cancel_url }}" class="button cancel-link">{% trans "Cancel" %}</a>
+    </form>
+</div>
+{% endblock %}
