@@ -5,17 +5,9 @@
 <div id="content-main">
     <h1>{% trans "Confirm player merge" %}</h1>
     <p>
-        This action will keep <strong>{{ target }}</strong> and merge the other selected players into that record.
+        Choose the player record to keep. The other selected players will be merged into it.
         Their statistics, rosters, scorecard data, and legacy identities will be consolidated. The source records will be deleted.
     </p>
-
-    <ul>
-        {% for player in players %}
-        <li>
-            {{ player }}{% if forloop.first %} <strong>{% trans "(record to keep)" %}</strong>{% endif %}
-        </li>
-        {% endfor %}
-    </ul>
 
     <form method="post">
         {% csrf_token %}
@@ -24,6 +16,17 @@
         {% for player in players %}
         <input type="hidden" name="_selected_action" value="{{ player.pk }}">
         {% endfor %}
+
+        <ul>
+        {% for player in players %}
+        <li>
+            <label>
+                <input type="radio" name="target_player_id" value="{{ player.pk }}"{% if player.pk == target.pk %} checked{% endif %} required>
+                {{ player }}
+            </label>
+        </li>
+        {% endfor %}
+        </ul>
         <button type="submit" name="confirm_merge" value="1" class="default">{% trans "Yes, merge these players" %}</button>
         <a href="{{ cancel_url }}" class="button cancel-link">{% trans "Cancel" %}</a>
     </form>

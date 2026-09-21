@@ -1,9 +1,13 @@
-from django.test import TestCase
+from unittest.mock import Mock
+
+from django.test import RequestFactory, TestCase
+from django.template.loader import render_to_string
 from django.urls import reverse
 
 from games.models import Game
 from stats.models import BattingStatLine
 
+from players.admin import merge_selected_players
 from players.models import LegacyPlayerIdentity, Player, PlayerMergeAudit, Roster
 from players.services import find_duplicate_players, merge_players, undo_player_merge
 from teams.models import Season, Team
@@ -41,6 +45,46 @@ class PlayerDetailTests(TestCase):
 
 
 class PlayerMergeTests(TestCase):
+	def test_merge_confirmation_submits_the_target_player(self):
+		target = Player.objects.create(first_name='Zoe', last_name='Young')
+		source = Player.objects.create(first_name='Amy', last_name='Adams')
+
+		rendered = render_to_string(
+			'admin/players/confirm_merge.html',
+			{
+				'players': [source, target],
+				'target': source,
+				'opts': Player._meta,
+				'cancel_url': reverse('admin:players_player_changelist'),
+			},
+		)
+
+		form_start = rendered.index('<form')
+		form_end = rendered.index('</form>')
+		target_input = rendered.index(f'name="target_player_id" value="{target.pk}"')
+		self.assertGreater(target_input, form_start)
+		self.assertLess(target_input, form_end)
+
+	def test_admin_merge_keeps_the_selected_target_player(self):
+		target = Player.objects.create(first_name='Zoe', last_name='Young')
+		source = Player.objects.create(first_name='Amy', last_name='Adams')
+		request = RequestFactory().post(
+			reverse('admin:players_player_changelist'),
+			{
+				'confirm_merge': '1',
+				'target_player_id': str(target.pk),
+			},
+		)
+		request.user = None
+		modeladmin = Mock()
+		modeladmin.model = Player
+
+		merge_selected_players(modeladmin, request, Player.objects.filter(pk__in=[target.pk, source.pk]))
+
+		self.assertTrue(Player.objects.filter(pk=target.pk, first_name='Zoe').exists())
+		self.assertFalse(Player.objects.filter(pk=source.pk).exists())
+		self.assertEqual(PlayerMergeAudit.objects.get().target_player_id, target.pk)
+
 	def test_find_duplicate_players_finds_similar_names(self):
 		Player.objects.create(first_name='John', last_name='Smith')
 		Player.objects.create(first_name='Johnny', last_name='Smith')

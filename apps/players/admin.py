@@ -33,7 +33,7 @@ def find_duplicate_selected_players(modeladmin, request, queryset):
     modeladmin.message_user(request, f'Likely duplicates: {preview}', level=messages.WARNING)
 
 
-@admin.action(description='Merge selected players into the first selected record')
+@admin.action(description='Merge selected players into the chosen record')
 def merge_selected_players(modeladmin, request, queryset):
     selected = list(queryset.order_by('last_name', 'first_name'))
     if len(selected) < 2:
@@ -41,6 +41,13 @@ def merge_selected_players(modeladmin, request, queryset):
         return
 
     target = selected[0]
+    if 'confirm_merge' in request.POST:
+        try:
+            target = next(player for player in selected if player.pk == int(request.POST.get('target_player_id', '')))
+        except (TypeError, ValueError, StopIteration):
+            modeladmin.message_user(request, 'Choose a valid player record to keep.', level=messages.ERROR)
+            return HttpResponseRedirect(request.get_full_path())
+
     if 'confirm_merge' not in request.POST:
         return TemplateResponse(
             request,
@@ -56,7 +63,7 @@ def merge_selected_players(modeladmin, request, queryset):
         )
 
     audit_ids = []
-    for source in selected[1:]:
+    for source in (player for player in selected if player.pk != target.pk):
         source_id = source.pk
         merge_players(target, source, merged_by=request.user)
         audit_ids.append(str(PlayerMergeAudit.objects.get(
