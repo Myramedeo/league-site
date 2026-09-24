@@ -1,9 +1,9 @@
 name: Backup production data
 
 on:
-  # Run every day at 3:00 AM UTC.
+  # Run every 5 days at 3:00 AM UTC.
   schedule:
-    - cron: "0 3 * * *"
+    - cron: "0 3 */5 * *"
 
   # Allow a backup to be started manually.
   workflow_dispatch:
