@@ -60,7 +60,7 @@
 </head>
 <body class="min-h-screen bg-gradient-to-b from-[#171717] to-[#262626] text-[#F2F0E6]">
 
-    <nav class="sticky top-0 z-10 border-b border-[#525252] bg-[#171717]/95 backdrop-blur">
+    <nav class="sticky top-0 z-50 border-b border-[#525252] bg-[#171717]/95 backdrop-blur">
         <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-y-3 px-6 py-4">
             <a href="{% url 'home' %}" class="font-display flex items-center gap-2 text-lg font-semibold uppercase tracking-wide text-[#F2F0E6] hover:text-[#E8B23D] transition-colors">
                 <span aria-hidden="true">⚾</span>
@@ -68,11 +68,57 @@
             </a>
             <div class="flex flex-wrap items-center gap-x-6 gap-y-2 font-scoreboard text-xs uppercase tracking-[0.15em]">
                 <a href="{% url 'team_list' %}" class="text-[#C9CFC3] hover:text-[#E8B23D] transition-colors">Teams</a>
+                <a href="{% url 'player_list' %}" class="text-[#C9CFC3] hover:text-[#E8B23D] transition-colors">Players</a>
                 <a href="{% url 'standings' %}" class="text-[#C9CFC3] hover:text-[#E8B23D] transition-colors">Standings</a>
                 <a href="{% url 'leaderboards' %}" class="text-[#C9CFC3] hover:text-[#E8B23D] transition-colors">Stats</a>
                 <a href="{% url 'schedule' %}" class="text-[#C9CFC3] hover:text-[#E8B23D] transition-colors">Schedule</a>
-                <a href="{% url 'photo_list' %}" class="text-[#C9CFC3] hover:text-[#E8B23D] transition-colors">Photos</a>
-                <a href="{% url 'article_list' %}" class="text-[#D4D4D4] hover:text-[#E8B23D] transition-colors">Articles</a>
+                <div
+                    x-data="{ open: false }"
+                    class="relative"
+                    @mouseenter="open = true"
+                    @mouseleave="open = false"
+                    @click.outside="open = false"
+                >
+                    <button
+                        type="button"
+                        class="flex shrink-0 items-center gap-1 whitespace-nowrap text-[#C9CFC3] transition-colors hover:text-[#E8B23D] focus:text-[#E8B23D] focus:outline-none"
+                        aria-haspopup="true"
+                        :aria-expanded="open.toString()"
+                        @click="open = !open"
+                        @focus="open = true"
+                    >
+                        PAGES
+
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5 transition-transform duration-200" :class="{ 'rotate-180': open }" aria-hidden="true" > <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" /> </svg>
+                    </button>
+
+                    <div
+                        x-cloak
+                        x-show="open"
+                        x-transition:enter="transition ease-out duration-100"
+                        x-transition:enter-start="opacity-0 -translate-y-1"
+                        x-transition:enter-end="opacity-100 translate-y-0"
+                        x-transition:leave="transition ease-in duration-75"
+                        x-transition:leave-start="opacity-100"
+                        x-transition:leave-end="opacity-0"
+                        class="absolute right-0 top-full z-20 w-36 pt-3"
+                    >
+                        <div class="border border-[#525252] bg-[#171717] py-2 shadow-lg">
+                            <a
+                                href="{% url 'photo_list' %}"
+                                class="block px-4 py-2 text-[#C9CFC3] hover:bg-[#262626] hover:text-[#E8B23D]"
+                            >
+                                Photos
+                            </a>
+                            <a
+                                href="{% url 'article_list' %}"
+                                class="block px-4 py-2 text-[#C9CFC3] hover:bg-[#262626] hover:text-[#E8B23D]"
+                            >
+                                Articles
+                            </a>
+                        </div>
+                    </div>
+                </div>
                 {% if request.user.is_staff %}
                 <a href="{% url 'game_entry:portal' %}" class="text-[#E8B23D] hover:text-[#F2C463] transition-colors">Scoring</a>
                 {% else %}

@@ -148,6 +148,87 @@ def team_batting_stats(team, competition):
     return results
 
 
+def competition_batting_stats(competition):
+    """Returns each rostered player's competition batting totals across all teams, zero-filled if no lines recorded."""
+    from players.models import Roster
+
+    roster_entries = (
+        Roster.objects.filter(competition=competition, show_in_team_list=True)
+        .select_related('player')
+        .order_by('player__last_name', 'player__first_name')
+    )
+
+    seen_player_ids = set()
+    unique_entries = []
+    for entry in roster_entries:
+        if entry.player_id not in seen_player_ids:
+            seen_player_ids.add(entry.player_id)
+            unique_entries.append(entry)
+
+    totals_by_player = {
+        row['player_id']: row
+        for row in (
+            BattingStatLine.objects
+            .filter(game__competition=competition, player_id__in=seen_player_ids)
+            .values('player_id')
+            .annotate(
+                at_bats=Sum('at_bats'),
+                runs=Sum('runs'),
+                hits=Sum('hits'),
+                rbis=Sum('rbis'),
+                walks=Sum('walks'),
+                strikeouts=Sum('strikeouts'),
+                hit_by_pitch=Sum('hit_by_pitch'),
+                sacrifices=Sum('sacrifices'),
+                singles=Sum('singles'),
+                doubles=Sum('doubles'),
+                triples=Sum('triples'),
+                home_runs=Sum('home_runs'),
+            )
+        )
+    }
+
+    results = []
+    for entry in unique_entries:
+        totals = totals_by_player.get(entry.player_id, {})
+        at_bats = totals.get('at_bats') or 0
+        hits = totals.get('hits') or 0
+        walks = totals.get('walks') or 0
+        hit_by_pitch = totals.get('hit_by_pitch') or 0
+        sacrifices = totals.get('sacrifices') or 0
+        singles = totals.get('singles') or 0
+        doubles = totals.get('doubles') or 0
+        triples = totals.get('triples') or 0
+        home_runs = totals.get('home_runs') or 0
+        plate_appearances = at_bats + walks + hit_by_pitch + sacrifices
+        batting_average = round(hits / at_bats, 3) if at_bats else 0.0
+        raw_on_base_percentage = ((hits + walks + hit_by_pitch) / plate_appearances) if plate_appearances else 0.0
+        on_base_percentage = round(raw_on_base_percentage, 3)
+        total_bases = singles + (2 * doubles) + (3 * triples) + (4 * home_runs)
+        raw_slugging_percentage = (total_bases / at_bats) if at_bats else 0.0
+        slugging_percentage = round(raw_slugging_percentage, 3)
+
+        results.append({
+            'player': entry.player,
+            'team': entry.team,
+            'at_bats': at_bats,
+            'runs': totals.get('runs') or 0,
+            'hits': hits,
+            'doubles': doubles,
+            'triples': triples,
+            'home_runs': home_runs,
+            'rbis': totals.get('rbis') or 0,
+            'walks': walks,
+            'strikeouts': totals.get('strikeouts') or 0,
+            'batting_average': batting_average,
+            'on_base_percentage': on_base_percentage,
+            'slugging_percentage': slugging_percentage,
+            'on_base_plus_slugging': round(raw_on_base_percentage + raw_slugging_percentage, 3),
+        })
+
+    return results
+
+
 def batting_leaderboard(competition, min_at_bats=10):
     """Returns players sorted by competition batting average, descending."""
     lines = (
