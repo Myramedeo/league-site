@@ -52,9 +52,11 @@ def schedule(request):
 @cache_page(60 * 15)
 def leaderboards(request):
     competition = get_selected_competition(request)
+    # Playoff series are much shorter, so a regular-season at-bat minimum would exclude most players.
+    min_at_bats = 2 if competition and competition.phase == 'PLAYOFFS' else 5
     return render(request, 'core/leaderboards.html', {
         'competition': competition,
-        'batting_leaders': batting_leaderboard(competition, min_at_bats=5) if competition else [],
+        'batting_leaders': batting_leaderboard(competition, min_at_bats=min_at_bats) if competition else [],
         'rbi_leaders': rbi_leaderboard(competition) if competition else [],
         'runs_leaders': runs_leaderboard(competition) if competition else [],
         'all_competitions': Competition.objects.select_related('season'),
