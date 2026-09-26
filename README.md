@@ -38,8 +38,10 @@ The project entry point is the Django project in league_site, with URL routing d
 - Frontend: Django templates, Tailwind CSS via django-tailwind
 - Admin: django-nested-admin
 - Static files: WhiteNoise, Gunicorn
-- Database: SQLite by default, with support for PostgreSQL-style DATABASE_URL configuration
+- Database: SQLite by default for local development; PostgreSQL is supported through DATABASE_URL for production
+- Object storage: S3-compatible storage for uploaded media and CKEditor assets, including Railway Buckets
 - Email: Resend integration for newsletter confirmations
+- Production hosting: Railway with Gunicorn, Docker, and a managed PostgreSQL database
 
 ## Project Structure
 
@@ -117,18 +119,28 @@ The API is mounted under /api/ and includes routes for league data and schemas. 
 
 ## Deployment
 
-The repository includes Docker support and a Procfile for deployment to platforms such as Railway or Heroku. The container build installs Python and Node dependencies, builds Tailwind assets, collects static files, and starts Gunicorn.
+Production is designed for Railway:
+
+- The Docker image uses Python 3.12 and Node.js 22.
+- The image installs Python dependencies, installs and builds Tailwind, and runs `collectstatic`.
+- Railway supplies the `PORT` environment variable; the Procfile starts `league_site.wsgi` with Gunicorn.
+- Production should use PostgreSQL through `DATABASE_URL` rather than the local SQLite fallback.
+- Uploaded media and CKEditor files use the configured S3-compatible storage backend. Set `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_STORAGE_BUCKET_NAME`, `AWS_S3_ENDPOINT_URL`, `AWS_S3_REGION_NAME`, and, where needed, `AWS_S3_ADDRESSING_STYLE` for Railway Buckets or another provider.
+- Set `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, `SECRET_KEY`, and `DEBUG=False` in the deployment environment. `SITE_BASE_URL` and the `RESEND_*` settings are also needed for production newsletter emails.
+
+### Backups
+
+The GitHub Actions workflow in `.github/workflows/backup.yml` runs every five days at 03:00 UTC and can also be started manually. It:
+
+- Creates and verifies a PostgreSQL custom-format dump from Railway, then uploads it to Cloudflare R2.
+- Synchronizes Railway Bucket media to Cloudflare R2 and verifies every uploaded object.
+- Retains PostgreSQL dumps for 30 days.
+- Creates a GitHub issue when a backup run fails.
+
+Configure the workflow's GitHub Actions secrets for the Railway database and bucket, plus the R2 credentials, endpoint, and bucket name, before relying on automated backups.
 
 ## Notes for Contributors
 
 - Model changes should be followed by migrations with python manage.py makemigrations and python manage.py migrate.
 - UI changes in the Tailwind theme may require a fresh build with python manage.py tailwind build.
 - The game-entry workflow is staff-oriented and relies on Django authentication and admin access.
-
-## Roadmap
-
-- [ ] Rework visuals to be more similar to League Lineup's
-- [ ] Import previous dataset
-- [ ] Image storage
-- [ ] Rework entry / scoring flow
-- [ ] Improve player viewing
