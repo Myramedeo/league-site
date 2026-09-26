@@ -1,0 +1,22 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<div id="content-main">
+    <h1>{% trans "Confirm newsletter send" %}</h1>
+    <p>
+        You are about to send <strong>"{{ campaign.subject }}"</strong> to
+        <strong>{{ recipient_count }}</strong> confirmed subscriber{{ recipient_count|pluralize }}.
+        This cannot be undone.
+    </p>
+
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="send_now">
+        <input type="hidden" name="select_across" value="0">
+        <input type="hidden" name="{{ action_checkbox_name }}" value="{{ campaign.pk }}">
+        <button type="submit" name="confirm_send" value="1" class="default">{% trans "Yes, send now" %}</button>
+        <a href="{{ cancel_url }}" class="button cancel-link">{% trans "Cancel" %}</a>
+    </form>
+</div>
+{% endblock %}
