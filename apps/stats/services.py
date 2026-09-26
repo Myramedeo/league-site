@@ -1,4 +1,5 @@
-from django.db.models import Sum, F, Q
+from django.db.models import OuterRef, Subquery, Sum, F, Q
+from players.models import Roster
 from .models import BattingStatLine, PitchingStatLine
 
 
@@ -229,12 +230,29 @@ def competition_batting_stats(competition):
     return results
 
 
+def _leaderboard_batting_lines(competition):
+    team_abbreviation = Roster.objects.filter(
+        competition=competition,
+        player_id=OuterRef('player_id'),
+    ).values('team__abbreviation')[:1]
+
+    return (
+        BattingStatLine.objects
+        .filter(game__competition=competition)
+        .annotate(team_abbreviation=Subquery(team_abbreviation))
+        .values(
+            'player__id',
+            'player__first_name',
+            'player__last_name',
+            'team_abbreviation',
+        )
+    )
+
+
 def batting_leaderboard(competition, min_at_bats=10):
     """Returns players sorted by competition batting average, descending."""
     lines = (
-        BattingStatLine.objects
-        .filter(game__competition=competition)
-        .values('player__id', 'player__first_name', 'player__last_name')
+        _leaderboard_batting_lines(competition)
         .annotate(
             total_at_bats=Sum('at_bats'),
             total_hits=Sum('hits'),
@@ -253,9 +271,7 @@ def batting_leaderboard(competition, min_at_bats=10):
 def rbi_leaderboard(competition):
     """Returns players sorted by total competition RBIs, descending."""
     lines = (
-        BattingStatLine.objects
-        .filter(game__competition=competition)
-        .values('player__id', 'player__first_name', 'player__last_name')
+        _leaderboard_batting_lines(competition)
         .annotate(total_rbis=Sum('rbis'))
     )
 
@@ -265,9 +281,7 @@ def rbi_leaderboard(competition):
 def runs_leaderboard(competition):
     """Returns players sorted by total competition runs scored, descending."""
     lines = (
-        BattingStatLine.objects
-        .filter(game__competition=competition)
-        .values('player__id', 'player__first_name', 'player__last_name')
+        _leaderboard_batting_lines(competition)
         .annotate(total_runs=Sum('runs'))
     )
 

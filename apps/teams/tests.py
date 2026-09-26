@@ -1,6 +1,7 @@
 from unittest.mock import Mock
 
 from django.contrib.admin import AdminSite
+from django.core.exceptions import ValidationError
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
@@ -8,6 +9,27 @@ from players.models import Player, Roster
 
 from teams.admin import CompetitionAdmin, copy_regular_rosters_to_playoffs
 from teams.models import Competition, Season, Team
+from teams.serializers import TeamSerializer
+
+
+class TeamAbbreviationTests(TestCase):
+	def test_abbreviation_is_optional_and_exposed_by_serializer(self):
+		team_without_abbreviation = Team.objects.create(name='Hawks')
+		team_with_abbreviation = Team.objects.create(name='Tigers', abbreviation='TIG')
+
+		self.assertEqual(team_without_abbreviation.abbreviation, '')
+		self.assertEqual(TeamSerializer(team_with_abbreviation).data['abbreviation'], 'TIG')
+
+	def test_abbreviation_must_contain_three_or_four_characters(self):
+		for abbreviation in ('HT', 'TIGER'):
+			with self.subTest(abbreviation=abbreviation):
+				team = Team(name='Hawks', abbreviation=abbreviation)
+				with self.assertRaises(ValidationError):
+					team.full_clean()
+
+		for abbreviation in ('HOC', 'HOCO'):
+			with self.subTest(abbreviation=abbreviation):
+				Team(name='Hawks', abbreviation=abbreviation).full_clean()
 
 
 class TeamListTests(TestCase):

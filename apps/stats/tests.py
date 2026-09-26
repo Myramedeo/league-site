@@ -4,7 +4,12 @@ from games.models import Game, GameResult
 from games.services import compute_standings
 from players.models import Player, Roster
 from stats.models import BattingStatLine
-from stats.services import team_batting_stats
+from stats.services import (
+    batting_leaderboard,
+    rbi_leaderboard,
+    runs_leaderboard,
+    team_batting_stats,
+)
 
 class StandingsTests(TestCase):
     def setUp(self):
@@ -189,5 +194,45 @@ class TeamBattingStatsTests(TestCase):
         results = team_batting_stats(self.team, self.competition)
 
         self.assertEqual([row['player'] for row in results], [visible_player])
+
+
+class BattingLeaderboardTests(TestCase):
+    def test_leaderboards_include_competition_team_abbreviation(self):
+        season = Season.objects.create(year=2026)
+        competition = Competition.objects.create(name='2026 Regular Season', season=season)
+        team = Team.objects.create(name='Hawks', abbreviation='HAW')
+        opponent = Team.objects.create(name='Owls')
+        player = Player.objects.create(first_name='Casey', last_name='Batter')
+        Roster.objects.create(
+            player=player,
+            team=team,
+            season=season,
+            competition=competition,
+        )
+        game = Game.objects.create(
+            season=season,
+            competition=competition,
+            home_team=team,
+            away_team=opponent,
+            date='2026-06-01',
+        )
+        BattingStatLine.objects.create(
+            player=player,
+            game=game,
+            at_bats=5,
+            hits=3,
+            runs=2,
+            rbis=1,
+        )
+
+        leaders = [
+            batting_leaderboard(competition, min_at_bats=1),
+            rbi_leaderboard(competition),
+            runs_leaderboard(competition),
+        ]
+
+        for leaderboard in leaders:
+            with self.subTest(leaderboard=leaderboard):
+                self.assertEqual(leaderboard[0]['team_abbreviation'], 'HAW')
 
 

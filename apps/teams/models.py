@@ -1,3 +1,4 @@
+from django.core.validators import MinLengthValidator
 from django.db import models
 
 class Season(models.Model):
@@ -34,6 +35,7 @@ class Competition(models.Model):
 
 class Team(models.Model):
     name = models.CharField(max_length=100)
+    abbreviation = models.CharField(max_length=4, blank=True, validators=[MinLengthValidator(3)])
     seasons = models.ManyToManyField(Season, through='players.Roster', related_name='teams')
 
     def __str__(self):
