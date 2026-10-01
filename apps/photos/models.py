@@ -1,4 +1,9 @@
+from io import BytesIO
+from pathlib import Path
+
+from django.core.files.base import ContentFile
 from django.db import models
+from PIL import Image
 
 
 class Album(models.Model):
@@ -31,3 +36,18 @@ class Photo(models.Model):
 
     def __str__(self):
         return self.title
+
+    def save(self, *args, **kwargs):
+        if (
+            self.image
+            and not self.image._committed
+            and Path(self.image.name).suffix.lower() in {'.heic', '.heif'}
+        ):
+            with Image.open(self.image) as source:
+                output = BytesIO()
+                source.convert('RGB').save(output, format='JPEG', quality=90)
+
+            filename = f'{Path(self.image.name).stem}.jpg'
+            self.image.save(filename, ContentFile(output.getvalue()), save=False)
+
+        super().save(*args, **kwargs)
