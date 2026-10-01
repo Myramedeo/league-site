@@ -10,7 +10,7 @@ class AnnouncementAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at', 'updated_at')
     fieldsets = (
         ('Content', {
-            'fields': ('title', 'description', 'attachment')
+            'fields': ('title', 'image', 'description', 'attachment')
         }),
         ('Status', {
             'fields': ('active',)

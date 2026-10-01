@@ -1,10 +1,21 @@
+from io import BytesIO
+
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
+from PIL import Image
 from announcements.models import Announcement
 
 
+@override_settings(
+    STORAGES={
+        'default': {'BACKEND': 'django.core.files.storage.InMemoryStorage'},
+        'staticfiles': {
+            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        },
+    }
+)
 class AnnouncementTests(TestCase):
     def setUp(self):
         self.announcement = Announcement.objects.create(
@@ -34,6 +45,31 @@ class AnnouncementTests(TestCase):
 
         self.assertTrue(announcement.attachment.name.startswith('announcements/'))
         self.assertTrue(announcement.attachment.name.endswith('.docx'))
+
+    def test_heic_image_is_validated_stored_as_jpeg_and_rendered_above_text(self):
+        heic_data = BytesIO()
+        Image.new('RGB', (1, 1), color='red').save(heic_data, format='HEIF')
+        announcement = Announcement(
+            title='Photo announcement',
+            description='Announcement text below the image.',
+            image=SimpleUploadedFile(
+                'league-event.HEIC', heic_data.getvalue(), content_type='image/heic'
+            ),
+        )
+
+        announcement.full_clean()
+        announcement.save()
+
+        self.assertTrue(announcement.image.name.endswith('.jpg'))
+        with Image.open(announcement.image) as stored_image:
+            self.assertEqual(stored_image.format, 'JPEG')
+
+        response = self.client.get(reverse('home'))
+        rendered_content = response.content.decode()
+        self.assertLess(
+            rendered_content.index(announcement.image.url),
+            rendered_content.index(announcement.description),
+        )
 
     def test_only_docx_attachments_are_valid(self):
         announcement = Announcement(
